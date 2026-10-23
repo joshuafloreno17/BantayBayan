@@ -8,9 +8,9 @@ import {
 
 import {
     collection,
-    getDocs,
     query,
-    where
+    where,
+    onSnapshot
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 
 const residentName = document.getElementById("residentName");
@@ -23,7 +23,13 @@ const reportsTableBody = document.getElementById("reportsTableBody");
 const reportCount = document.getElementById("reportCount");
 
 let currentUser = null;
-let isLoading = false;
+let unsubscribeReports = null;
+let unsubscribeFloodReports = null;
+
+let ordinaryReports = [];
+let floodReports = [];
+let activeFilter = "all";
+let listenerErrors = 0;
 
 function getLanguage() {
     return window.BantayBayanLanguage?.getCurrentLanguage?.() || "en";
@@ -39,12 +45,25 @@ function translate(key, fallback) {
             error: "Unable to load reports. Please check your connection and try again.",
             report: "report",
             reports: "reports",
-            unavailable: "Not available",
             noEmail: "No email available",
             otherIssue: "Other issue",
+            floodReport: "Flood Report",
             logoutLoading: "Logging out...",
             logoutError: "Logout failed. Please try again.",
-            logout: "Logout"
+            logout: "Logout",
+            pending: "Pending",
+            inProgress: "In Progress",
+            resolved: "Resolved",
+            rejected: "Rejected",
+            allReports: "All Reports",
+            floodReports: "Flood Reports",
+            otherIssues: "Other Issues",
+            garbage: "Garbage / Trash Problem",
+            flooding: "Flooding",
+            canal: "Canal / Drainage Problem",
+            streetlight: "Broken Streetlight",
+            others: "Other Community Problem",
+            noFilteredReports: "No reports match this filter."
         },
         fil: {
             loading: "Kinukuha ang iyong mga ulat...",
@@ -52,12 +71,25 @@ function translate(key, fallback) {
             error: "Hindi ma-load ang mga ulat. Pakisuri ang iyong koneksyon at subukan muli.",
             report: "ulat",
             reports: "mga ulat",
-            unavailable: "Hindi available",
             noEmail: "Walang email na available",
             otherIssue: "Iba pang isyu",
+            floodReport: "Ulat sa Baha",
             logoutLoading: "Nagla-logout...",
             logoutError: "Hindi nagtagumpay ang pag-logout. Pakisubukan muli.",
-            logout: "Mag-logout"
+            logout: "Mag-logout",
+            pending: "Nakabinbin",
+            inProgress: "Isinasagawa",
+            resolved: "Nalutas",
+            rejected: "Tinanggihan",
+            allReports: "Lahat ng Ulat",
+            floodReports: "Mga Ulat sa Baha",
+            otherIssues: "Iba Pang Isyu",
+            garbage: "Basura",
+            flooding: "Pagbaha",
+            canal: "Baradong Kanal",
+            streetlight: "Sirang Ilaw sa Kalsada",
+            others: "Iba Pang Problema sa Komunidad",
+            noFilteredReports: "Walang ulat na tumutugma sa filter na ito."
         }
     };
 
@@ -70,32 +102,76 @@ function showReportsMessage(message, type = "info") {
     reportsMessage.classList.remove("d-none");
 }
 
+function getStatusKey(status) {
+    const normalized = String(status || "Pending")
+        .trim()
+        .toLowerCase()
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ");
+
+    if (["resolved", "completed"].includes(normalized)) {
+        return "resolved";
+    }
+
+    if (["in progress", "processing"].includes(normalized)) {
+        return "inProgress";
+    }
+
+    if (["rejected", "cancelled"].includes(normalized)) {
+        return "rejected";
+    }
+
+    return "pending";
+}
+
 function getStatusClass(status) {
-    switch ((status || "Pending").toLowerCase()) {
+    switch (getStatusKey(status)) {
         case "resolved":
-        case "completed":
-        case "delivered":
             return "text-bg-success";
-
-        case "processing":
-        case "in progress":
+        case "inProgress":
             return "text-bg-primary";
-
         case "rejected":
-        case "cancelled":
             return "text-bg-danger";
-
         default:
             return "text-bg-warning";
     }
 }
 
+function displayStatus(status) {
+    const key = getStatusKey(status);
+
+    const fallback = {
+        pending: "Pending",
+        inProgress: "In Progress",
+        resolved: "Resolved",
+        rejected: "Rejected"
+    };
+
+    return translate(key, fallback[key]);
+}
+
+function getTimestampMillis(timestamp) {
+    if (!timestamp) return 0;
+
+    if (typeof timestamp.toMillis === "function") {
+        return timestamp.toMillis();
+    }
+
+    if (typeof timestamp.toDate === "function") {
+        return timestamp.toDate().getTime();
+    }
+
+    return 0;
+}
+
 function formatDate(timestamp) {
-    if (!timestamp || typeof timestamp.toDate !== "function") {
+    const milliseconds = getTimestampMillis(timestamp);
+
+    if (!milliseconds) {
         return getLanguage() === "fil" ? "Hindi available" : "Not available";
     }
 
-    return timestamp.toDate().toLocaleString(
+    return new Date(milliseconds).toLocaleString(
         getLanguage() === "fil" ? "fil-PH" : "en-PH",
         {
             year: "numeric",
@@ -109,105 +185,310 @@ function formatDate(timestamp) {
 
 function addCell(row, value) {
     const cell = document.createElement("td");
-    cell.textContent = value ?? "—";
+    cell.textContent = value || "—";
     row.appendChild(cell);
     return cell;
 }
 
 function updateReportCount(count) {
-    const language = getLanguage();
-
-    if (language === "fil") {
-        reportCount.textContent =
-            `${count} ${count === 1 ? "ulat" : "mga ulat"}`;
-    } else {
-        reportCount.textContent =
-            `${count} ${count === 1 ? "report" : "reports"}`;
-    }
+    reportCount.textContent =
+        `${count} ${count === 1
+            ? translate("report", "report")
+            : translate("reports", "reports")}`;
 }
 
-async function loadMyReports(user) {
-    if (isLoading) return;
-    isLoading = true;
+function getReportLocation(report, isFlood) {
+    if (isFlood) {
+        return report.purok || "—";
+    }
+
+    return [
+        report.barangay,
+        report.cityMunicipality,
+        report.province
+    ].filter(Boolean).join(", ") || "—";
+}
+
+function normalizeIssueType(type) {
+    return String(type || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_-]+/g, "");
+}
+
+function getReportType(report, isFlood) {
+    if (isFlood) {
+        const level = String(report.floodLevel || "").trim();
+
+        return level
+            ? `${translate("floodReport", "Flood Report")} - ${level}`
+            : translate("floodReport", "Flood Report");
+    }
+
+    const type = normalizeIssueType(report.type);
+
+    const issueTypes = {
+        garbage: ["garbage", "Garbage / Trash Problem"],
+        trash: ["garbage", "Garbage / Trash Problem"],
+        flooding: ["flooding", "Flooding"],
+        flood: ["flooding", "Flooding"],
+        canal: ["canal", "Canal / Drainage Problem"],
+        drainage: ["canal", "Canal / Drainage Problem"],
+        streetlight: ["streetlight", "Broken Streetlight"],
+        others: ["others", "Other Community Problem"],
+        other: ["others", "Other Community Problem"]
+    };
+
+    const issue = issueTypes[type];
+
+    return issue
+        ? translate(issue[0], issue[1])
+        : translate("otherIssue", "Other issue");
+}
+
+function renderReports() {
+    reportsTableBody.replaceChildren();
+
+    const allReports = [
+        ...ordinaryReports.map(report => ({
+            ...report,
+            reportKind: "issue"
+        })),
+        ...floodReports.map(report => ({
+            ...report,
+            reportKind: "flood"
+        }))
+    ].sort((a, b) =>
+        getTimestampMillis(b.createdAt) -
+        getTimestampMillis(a.createdAt)
+    );
+
+    const filteredReports = allReports.filter(report => {
+        if (activeFilter === "flood") {
+            return report.reportKind === "flood";
+        }
+
+        if (activeFilter === "garbage") {
+            return report.reportKind === "issue" &&
+                ["garbage", "trash"].includes(
+                    normalizeIssueType(report.type)
+                );
+        }
+
+        if (activeFilter === "flooding") {
+            return report.reportKind === "issue" &&
+                ["flooding", "flood"].includes(
+                    normalizeIssueType(report.type)
+                );
+        }
+
+        if (activeFilter === "canal") {
+            return report.reportKind === "issue" &&
+                ["canal", "drainage"].includes(
+                    normalizeIssueType(report.type)
+                );
+        }
+
+        if (activeFilter === "streetlight") {
+            return report.reportKind === "issue" &&
+                normalizeIssueType(report.type) === "streetlight";
+        }
+
+        if (activeFilter === "others") {
+            return report.reportKind === "issue" &&
+                ["others", "other"].includes(
+                    normalizeIssueType(report.type)
+                );
+        }
+
+        if (activeFilter === "issue") {
+            return report.reportKind === "issue";
+        }
+
+        return true;
+    });
+
+    updateReportCount(filteredReports.length);
+
+    if (listenerErrors > 0) {
+        reportsTableWrapper.classList.add("d-none");
+        showReportsMessage(
+            translate("error", "Unable to load reports."),
+            "danger"
+        );
+        return;
+    }
+
+    if (allReports.length === 0) {
+        reportsTableWrapper.classList.add("d-none");
+        showReportsMessage(
+            translate("noReports", "You have no reports yet."),
+            "info"
+        );
+        return;
+    }
+
+    if (filteredReports.length === 0) {
+        reportsTableWrapper.classList.remove("d-none");
+        reportsTableBody.replaceChildren();
+
+        showReportsMessage(
+            translate("noFilteredReports", "No reports match this filter."),
+            "info"
+        );
+        return;
+    }
+
+    filteredReports.forEach(report => {
+        const row = document.createElement("tr");
+        const isFlood = report.reportKind === "flood";
+
+        addCell(row, getReportType(report, isFlood));
+        addCell(row, getReportLocation(report, isFlood));
+        addCell(row, formatDate(report.createdAt));
+
+        const statusCell = document.createElement("td");
+        const statusBadge = document.createElement("span");
+
+        statusBadge.className = `badge ${getStatusClass(report.status)}`;
+        statusBadge.textContent = displayStatus(report.status);
+
+        statusCell.appendChild(statusBadge);
+        row.appendChild(statusCell);
+
+        reportsTableBody.appendChild(row);
+    });
+
+    reportsMessage.classList.add("d-none");
+    reportsTableWrapper.classList.remove("d-none");
+}
+
+function listenToMyReports(user) {
+    if (unsubscribeReports) unsubscribeReports();
+    if (unsubscribeFloodReports) unsubscribeFloodReports();
+
+    ordinaryReports = [];
+    floodReports = [];
+    listenerErrors = 0;
 
     reportsTableBody.replaceChildren();
     reportsTableWrapper.classList.add("d-none");
     updateReportCount(0);
 
-    showReportsMessage(translate("loading", "Loading your reports..."));
+    showReportsMessage(
+        translate("loading", "Loading your reports...")
+    );
 
-    try {
-        const reportsQuery = query(
-            collection(db, "reports"),
-            where("userId", "==", user.uid)
-        );
+    const ordinaryQuery = query(
+        collection(db, "reports"),
+        where("userId", "==", user.uid)
+    );
 
-        const snapshot = await getDocs(reportsQuery);
+    const floodQuery = query(
+        collection(db, "floodReports"),
+        where("userId", "==", user.uid)
+    );
 
-        if (snapshot.empty) {
-            showReportsMessage(
-                translate("noReports", "You have no reports yet."),
-                "info"
-            );
-            return;
+    unsubscribeReports = onSnapshot(
+        ordinaryQuery,
+        snapshot => {
+            ordinaryReports = snapshot.docs.map(documentSnapshot => ({
+                id: documentSnapshot.id,
+                ...documentSnapshot.data()
+            }));
+
+            renderReports();
+        },
+        error => {
+            console.error("Error loading ordinary reports:", error);
+            listenerErrors++;
+            renderReports();
         }
+    );
 
-        const reports = snapshot.docs
-            .map(reportDocument => ({
-                id: reportDocument.id,
-                ...reportDocument.data()
-            }))
-            .sort((a, b) => {
-                const dateA = a.createdAt?.toMillis?.() ?? 0;
-                const dateB = b.createdAt?.toMillis?.() ?? 0;
-                return dateB - dateA;
-            });
+    unsubscribeFloodReports = onSnapshot(
+        floodQuery,
+        snapshot => {
+            floodReports = snapshot.docs.map(documentSnapshot => ({
+                id: documentSnapshot.id,
+                ...documentSnapshot.data()
+            }));
 
-        reports.forEach(report => {
-            const row = document.createElement("tr");
+            renderReports();
+        },
+        error => {
+            console.error("Error loading flood reports:", error);
+            listenerErrors++;
+            renderReports();
+        }
+    );
+}
 
-            addCell(
-                row,
-                report.type || translate("otherIssue", "Other issue")
-            );
+function stopReportListeners() {
+    if (unsubscribeReports) {
+        unsubscribeReports();
+        unsubscribeReports = null;
+    }
 
-            // Current report.js saves barangay, not purok.
-            addCell(row, report.purok || report.barangay || "—");
-
-            addCell(row, formatDate(report.createdAt));
-
-            const statusCell = document.createElement("td");
-            const statusBadge = document.createElement("span");
-
-            statusBadge.className =
-                `badge ${getStatusClass(report.status)}`;
-
-            statusBadge.textContent = report.status || "Pending";
-
-            statusCell.appendChild(statusBadge);
-            row.appendChild(statusCell);
-
-            reportsTableBody.appendChild(row);
-        });
-
-        updateReportCount(reports.length);
-        reportsMessage.classList.add("d-none");
-        reportsTableWrapper.classList.remove("d-none");
-
-    } catch (error) {
-        console.error("Failed to load reports:", error);
-
-        showReportsMessage(
-            translate("error", "Unable to load reports."),
-            "danger"
-        );
-    } finally {
-        isLoading = false;
+    if (unsubscribeFloodReports) {
+        unsubscribeFloodReports();
+        unsubscribeFloodReports = null;
     }
 }
 
-onAuthStateChanged(auth, async user => {
+function setupReportFilter() {
+    let filter = document.getElementById("reportFilter");
+
+    if (!filter) {
+        filter = document.createElement("select");
+        filter.id = "reportFilter";
+        filter.className = "form-select mb-3";
+        filter.setAttribute("aria-label", "Filter reports");
+
+        reportsTableWrapper.parentNode.insertBefore(
+            filter,
+            reportsTableWrapper
+        );
+    }
+
+    const currentValue = filter.value || activeFilter;
+
+    const filterOptions = [
+        ["all", "allReports", "All Reports"],
+        ["flood", "floodReports", "Flood Reports"],
+        ["issue", "otherIssues", "Other Issues"],
+        ["garbage", "garbage", "Garbage / Trash Problem"],
+        ["flooding", "flooding", "Flooding"],
+        ["canal", "canal", "Canal / Drainage Problem"],
+        ["streetlight", "streetlight", "Broken Streetlight"],
+        ["others", "others", "Other Community Problem"]
+    ];
+
+    filter.replaceChildren();
+
+    filterOptions.forEach(([value, key, fallback]) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = translate(key, fallback);
+        filter.appendChild(option);
+    });
+
+    filter.value = filterOptions.some(option => option[0] === currentValue)
+        ? currentValue
+        : "all";
+
+    activeFilter = filter.value;
+
+    filter.onchange = () => {
+        activeFilter = filter.value;
+        renderReports();
+    };
+}
+
+onAuthStateChanged(auth, user => {
     if (!user) {
+        stopReportListeners();
+        currentUser = null;
         window.location.replace("login.html");
         return;
     }
@@ -218,38 +499,23 @@ onAuthStateChanged(auth, async user => {
     residentEmail.textContent =
         user.email || translate("noEmail", "No email available");
 
-    await loadMyReports(user);
+    setupReportFilter();
+    listenToMyReports(user);
 });
 
-// Update dynamic dashboard messages when the language changes.
+window.addEventListener("bantaybayan:languagechange", () => {
+    if (currentUser) {
+        setupReportFilter();
+        renderReports();
+    }
+});
+
 document.querySelectorAll("[data-language]").forEach(button => {
     button.addEventListener("click", () => {
-        if (!currentUser) return;
-
-        if (reportsMessage.classList.contains("d-none") === false) {
-            const message = reportsMessage.textContent;
-
-            if (
-                message.includes("Loading") ||
-                message.includes("Kinukuha")
-            ) {
-                showReportsMessage(translate("loading", "Loading your reports..."));
-            } else if (
-                message.includes("Wala ka pang") ||
-                message.includes("You have no reports")
-            ) {
-                showReportsMessage(translate("noReports", "You have no reports yet."));
-            } else if (
-                message.includes("Hindi ma-load") ||
-                message.includes("Unable to load")
-            ) {
-                showReportsMessage(translate("error", "Unable to load reports."), "danger");
-            }
+        if (currentUser) {
+            setupReportFilter();
+            renderReports();
         }
-
-        updateReportCount(
-            reportsTableBody.querySelectorAll("tr").length
-        );
     });
 });
 
@@ -258,6 +524,7 @@ logoutButton.addEventListener("click", async () => {
     logoutButton.textContent = translate("logoutLoading", "Logging out...");
 
     try {
+        stopReportListeners();
         await signOut(auth);
         window.location.replace("login.html");
     } catch (error) {

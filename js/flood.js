@@ -1,5 +1,4 @@
-
-import { db } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js";
 
 import {
     collection,
@@ -275,15 +274,27 @@ floodForm.addEventListener("submit", async function (event) {
 
         showFloodMessage("Submitting flood report...", "info", true);
 
-        await addDoc(collection(db, "floodReports"), {
-            purok,
-            floodLevel,
-            description,
-            latitude,
-            longitude,
-            photoUrl: compressedPhoto,
-            createdAt: serverTimestamp()
-        });
+const user = auth.currentUser;
+
+if (!user) {
+    showFloodMessage(
+        "Please log in before submitting a flood report.",
+        "danger",
+        true
+    );
+    return;
+}
+
+await addDoc(collection(db, "floodReports"), {
+    userId: user.uid,
+    purok,
+    floodLevel,
+    description,
+    latitude,
+    longitude,
+    photoUrl: compressedPhoto,
+    createdAt: serverTimestamp()
+});
 
         floodForm.reset();
 
@@ -353,9 +364,11 @@ function startFloodAlertListener() {
 
                 if (!report.purok || !report.createdAt) return;
 
-                const createdAt = report.createdAt.toMillis();
+              const createdAt = report.createdAt.toMillis();
 
-                if (createdAt < oneHourAgo) return;
+if (createdAt <= 0 || createdAt < oneHourAgo || createdAt > Date.now()) {
+    return;
+}
 
                 recentCounts[report.purok] =
                     (recentCounts[report.purok] || 0) + 1;
