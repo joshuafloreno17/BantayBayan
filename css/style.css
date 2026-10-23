@@ -1,0 +1,409 @@
+
+:root {
+    --primary: #0d6efd;
+    --primary-dark: #084298;
+    --background: #f5f8fc;
+    --text: #243247;
+    --muted: #6c7a8d;
+    --border: #e5ebf3;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--background);
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.navbar {
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.navbar-brand {
+    font-size: 1.35rem;
+    letter-spacing: -0.4px;
+}
+
+.nav-link {
+    margin-left: 8px;
+    font-weight: 500;
+    transition: opacity 0.2s ease;
+}
+
+.nav-link:hover {
+    opacity: 0.8;
+}
+
+/* Hero section */
+
+.hero-section {
+    color: #ffffff;
+    background: linear-gradient(135deg, #0d6efd, #084298);
+    overflow: hidden;
+}
+
+.hero-section h1 {
+    max-width: 680px;
+    line-height: 1.2;
+    letter-spacing: -1px;
+}
+
+.hero-section .lead {
+    max-width: 600px;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.hero-card {
+    padding: 32px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 20px;
+    backdrop-filter: blur(8px);
+}
+
+.hero-card p {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.hero-icon {
+    font-size: 4rem;
+    margin-bottom: 12px;
+}
+
+/* Buttons */
+
+.btn {
+    border-radius: 9px;
+    font-weight: 600;
+}
+
+.btn-outline-light:hover {
+    color: var(--primary-dark);
+}
+
+/* Map section */
+
+#map {
+    width: 100%;
+    height: 420px;
+    background: #e8eef6;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    z-index: 1;
+}
+
+.map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.map-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+}
+
+.legend-dot.pending {
+    background: #dc3545;
+}
+
+.legend-dot.progress {
+    background: #ffc107;
+}
+
+.legend-dot.resolved {
+    background: #198754;
+}
+
+/* Information cards */
+
+.info-card {
+    padding: 25px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(30, 60, 100, 0.08);
+}
+
+.info-icon {
+    margin-bottom: 12px;
+    font-size: 2rem;
+}
+
+.info-card p {
+    font-size: 0.95rem;
+}
+
+/* ===================================
+   Flash Messages / Alerts
+   =================================== */
+
+#formMessage {
+    padding: 14px 18px;
+    margin: 0 0 20px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    box-shadow: 0 4px 12px rgba(30, 60, 100, 0.05);
+    animation: flashSlideIn 0.3s ease-out;
+}
+
+/* Success */
+#formMessage.alert-success {
+    color: #146c43;
+    background-color: #d1e7dd;
+    border: 1px solid #a3cfbb;
+}
+
+/* Warning */
+#formMessage.alert-warning {
+    color: #664d03;
+    background-color: #fff3cd;
+    border: 1px solid #ffecb5;
+}
+
+/* Error */
+#formMessage.alert-danger {
+    color: #842029;
+    background-color: #f8d7da;
+    border: 1px solid #f1aeb5;
+}
+
+/* Processing / Information */
+#formMessage.alert-info {
+    color: #055160;
+    background-color: #cff4fc;
+    border: 1px solid #9eeaf9;
+}
+
+/* Keep hidden messages hidden */
+#formMessage.d-none {
+    display: none !important;
+}
+
+/* Flash message animation */
+@keyframes flashSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Form focus and validation */
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* Footer */
+
+footer {
+    margin-top: 20px;
+    background: #ffffff;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+}
+
+footer .fw-semibold {
+    color: var(--text);
+}
+
+/* Responsive layout */
+
+@media (max-width: 767px) {
+    .hero-section h1 {
+        font-size: 2rem;
+        letter-spacing: -0.5px;
+    }
+
+    .hero-card {
+        padding: 24px;
+    }
+
+    #map {
+        height: 320px;
+    }
+
+    .map-legend {
+        gap: 10px;
+        font-size: 0.82rem;
+    }
+
+    .info-card {
+        padding: 20px;
+    }
+
+    #formMessage {
+        padding: 12px 14px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    #formMessage {
+        animation: none;
+    }
+
+    .info-card,
+    .nav-link {
+        transition: none;
+    }
+}
+
+
+/* Language toggle buttons */
+.language-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid #dee2e6;
+    border-radius: 30px;
+    background: #e9ecef;
+}
+
+.language-switch button {
+    border: none;
+    border-radius: 24px;
+    padding: 7px 14px;
+    background: transparent;
+    color: #495057;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.language-switch button.active {
+    background: #ffffff;
+    color: #0d6efd;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.language-switch button:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+
+/* =========================================
+   FLOOD WATCH — LOCATION SEARCH & PHOTO
+========================================= */
+
+/* Location search field */
+#floodMapSearchInput {
+    width: 100%;
+    min-width: 0;
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 12px 15px !important;
+    border: 1px solid #d7dfeb !important;
+    border-radius: 10px !important;
+    background: #fff;
+    font-size: 15px;
+    line-height: 1.4;
+    box-shadow: none !important;
+    resize: none;
+}
+
+#floodMapSearchInput:focus {
+    border-color: #2563eb !important;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+}
+
+/* Flood photo input */
+#floodPhoto {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    height: auto;
+    padding: 7px 10px;
+    border: 1px solid #d7dfeb;
+    border-radius: 10px;
+    background: #fff;
+    font-size: 14px;
+}
+
+/* Keep form controls from overflowing their columns */
+#floodMapSearchInput,
+#floodPhoto {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+/* Search and location buttons */
+#floodMapSearchInput ~ button,
+#floodMapSearch button {
+    min-height: 48px;
+    height: 48px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+/* Better spacing for the map location controls */
+#floodMapSearch {
+    min-width: 0;
+}
+
+/* Photo preview */
+#floodPhotoPreview {
+    display: block;
+    max-width: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    margin-top: 12px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+    #floodMapSearchInput {
+        height: 46px !important;
+        min-height: 46px !important;
+        font-size: 14px;
+    }
+
+    #floodPhoto {
+        font-size: 13px;
+    }
+
+    #floodMapSearchInput ~ button,
+    #floodMapSearch button {
+        width: 100%;
+        min-height: 46px;
+        height: 46px;
+    }
+}

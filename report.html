@@ -1,0 +1,915 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Report an Issue | BantayBayan</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <style>
+        #reportMap {
+            width: 100%;
+            height: 380px;
+            border-radius: 12px;
+            border: 1px solid #dee2e6;
+            z-index: 1;
+        }
+
+        .map-instructions {
+            background: #eef6ff;
+            border: 1px solid #cfe2ff;
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+
+        .location-coordinate {
+            overflow-wrap: anywhere;
+            font-size: 0.9rem;
+        }
+
+        #region,
+        #province,
+        #cityMunicipality,
+        #barangay,
+        #purok {
+            position: relative;
+            z-index: 2;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .location-section {
+            padding: 16px;
+            background: #f8faff;
+            border: 1px solid #dee7f2;
+            border-radius: 12px;
+        }
+
+        .language-area {
+            display: flex;
+            align-items: center;
+            margin-left: 16px;
+        }
+
+        @media (max-width: 991px) {
+            .language-area {
+                margin: 12px 0 4px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="dashboard.html">🏘️ BantayBayan</a>
+
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#mainNavbar"
+                aria-controls="mainNavbar"
+                aria-expanded="false"
+                aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNavbar">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="dashboard.html" data-i18n="home">Home</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link active"
+                       href="report.html"
+                       data-i18n="reportIssue">Report an Issue</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="flood.html">Flood Watch</a>
+                </li>
+            </ul>
+
+            <div class="language-area">
+                <div class="d-flex align-items-center gap-1"
+                     role="group"
+                     aria-label="Choose language">
+                    <button type="button"
+                            class="btn btn-sm btn-light"
+                            data-language="en"
+                            aria-label="English">
+                        EN
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-sm btn-outline-light"
+                            data-language="fil"
+                            aria-label="Filipino">
+                        FIL
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+
+            <div class="mb-4">
+                <span class="badge text-bg-primary mb-2"
+                      data-i18n="communityReporting">Community Reporting</span>
+
+                <h1 class="fw-bold" data-i18n="reportPageTitle">
+                    Report a Community Issue
+                </h1>
+
+                <p class="text-secondary" data-i18n="reportPageDescription">
+                    Help your community by reporting a problem and selecting its exact location.
+                </p>
+            </div>
+
+            <div id="formMessage"
+                 class="alert d-none"
+                 role="alert"
+                 aria-live="polite"></div>
+
+            <form id="reportForm" class="info-card" novalidate>
+
+                <!-- TYPE OF ISSUE -->
+                <div class="mb-3">
+                    <label for="issueType" class="form-label fw-semibold"
+                           data-i18n="typeOfIssue">
+                        Type of Issue
+                    </label>
+
+                    <select id="issueType" name="type" class="form-select" required>
+                        <option value="" data-i18n="selectIssue">Select an issue</option>
+                        <option value="garbage" data-i18n="garbageIssue">Garbage / Trash</option>
+                        <option value="flooding" data-i18n="floodingIssue">Flooding</option>
+                        <option value="canal" data-i18n="canalIssue">Blocked Canal</option>
+                        <option value="streetlight" data-i18n="streetlightIssue">Broken Streetlight</option>
+                        <option value="others" data-i18n="otherIssue">Other Problems</option>
+                    </select>
+                </div>
+
+                <!-- ADMINISTRATIVE LOCATION -->
+                <div class="location-section mb-4">
+                    <h5 class="fw-bold mb-1" data-i18n="locationInformation">
+                        📍 Location Information
+                    </h5>
+
+                    <p class="small text-secondary mb-3" data-i18n="locationInstructions">
+                        Select where the problem happened, starting from the region down to the barangay.
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="region" class="form-label fw-semibold"
+                               data-i18n="region">Region</label>
+
+                        <select id="region" name="region" class="form-select" required>
+                            <option value="" data-i18n="loadingRegions">Loading regions...</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="province" class="form-label fw-semibold"
+                               data-i18n="province">Province</label>
+
+                        <select id="province" name="province"
+                                class="form-select" disabled required>
+                            <option value="" data-i18n="selectRegionFirst">
+                                Select a region first
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cityMunicipality" class="form-label fw-semibold"
+                               data-i18n="cityMunicipality">City / Municipality</label>
+
+                        <select id="cityMunicipality"
+                                name="cityMunicipality"
+                                class="form-select"
+                                disabled
+                                required>
+                            <option value="" data-i18n="selectProvinceFirst">
+                                Select a province first
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="barangay" class="form-label fw-semibold"
+                               data-i18n="barangay">Barangay</label>
+
+                        <select id="barangay" name="barangay"
+                                class="form-select" disabled required>
+                            <option value="" data-i18n="selectCityFirst">
+                                Select a city / municipality first
+                            </option>
+                        </select>
+                    </div>
+
+                    <div id="administrativeMessage"
+                         class="small mt-2 text-secondary"
+                         aria-live="polite"
+                         data-i18n="loadingLocations">
+                        Loading Philippine locations...
+                    </div>
+                </div>
+
+                <!-- EXACT MAP LOCATION -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">
+                        📌 <span data-i18n="exactLocation">Exact Location of the Problem</span>
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <div class="map-instructions mb-3">
+                        <strong data-i18n="pinInstructions">Select your location and place a pin on the map.</strong>
+
+                        <div class="small mt-1" data-i18n="locationRequired">
+                            Select the exact location on the map before submitting.
+                        </div>
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <input type="search"
+                               id="mapSearch"
+                               class="form-control"
+                               placeholder="Search a place or landmark..."
+                               data-i18n-placeholder="mapSearchPlaceholder">
+
+                        <button type="button"
+                                class="btn btn-outline-primary"
+                                id="searchLocation"
+                                data-i18n="search">
+                            Search
+                        </button>
+                    </div>
+
+                    <div id="reportMap"
+                         aria-label="Map for selecting the problem location"></div>
+
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <button type="button"
+                                class="btn btn-outline-primary btn-sm"
+                                id="useMyLocation"
+                                data-i18n="useCurrentLocation">
+                            Use My Current Location
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-sm"
+                                id="clearLocation"
+                                data-i18n="clearPin">
+                            Clear Pin
+                        </button>
+                    </div>
+
+                    <div class="form-text mt-2" data-i18n="reportFormReminder">
+                        Make sure all information is correct and complete before submitting.
+                    </div>
+
+                    <div id="locationMessage"
+                         class="small mt-2 text-secondary"
+                         aria-live="polite"
+                         data-i18n="noLocationSelected">
+                        No location selected yet.
+                    </div>
+
+                    <input type="hidden" id="latitude" name="latitude">
+                    <input type="hidden" id="longitude" name="longitude">
+                </div>
+
+                <!-- DESCRIPTION -->
+                <div class="mb-3">
+                    <label for="description" class="form-label fw-semibold"
+                           data-i18n="description">Description</label>
+
+                    <textarea id="description"
+                              name="description"
+                              class="form-control"
+                              rows="4"
+                              minlength="5"
+                              maxlength="1000"
+                              placeholder="Describe the problem and its location..."
+                              data-i18n-placeholder="descriptionPlaceholder"
+                              required></textarea>
+
+                    <div class="form-text" data-i18n="descriptionHelp">
+                        Enter 5 to 1000 characters.
+                    </div>
+                </div>
+
+                <!-- PHOTO -->
+                <div class="mb-3">
+                    <label for="photo" class="form-label fw-semibold">
+                        <span data-i18n="photo">Photo</span>
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <input type="file"
+                           id="photo"
+                           name="photo"
+                           class="form-control"
+                           accept="image/jpeg,image/png,image/webp"
+                           required>
+
+                    <div class="form-text" data-i18n="photoHelp">
+                        A photo of the problem is required. JPG, PNG, or WebP; up to 5 MB before compression.
+                    </div>
+                </div>
+
+                <!-- CONTACT NAME -->
+                <div class="mb-3">
+                    <label for="contactName" class="form-label fw-semibold">
+                        <span data-i18n="yourName">Your Name</span>
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <input type="text"
+                           id="contactName"
+                           name="contactName"
+                           class="form-control"
+                           maxlength="100"
+                           placeholder="Enter your name"
+                           data-i18n-placeholder="yourNamePlaceholder"
+                           required>
+                </div>
+
+                <!-- CONTACT INFORMATION -->
+                <div class="mb-4">
+                    <label for="contactInfo" class="form-label fw-semibold">
+                        <span data-i18n="contactInformation">Contact Information</span>
+                        <span class="text-danger">*</span>
+                    </label>
+
+                    <input type="text"
+                           id="contactInfo"
+                           name="contactInfo"
+                           class="form-control"
+                           maxlength="200"
+                           placeholder="Phone number or email"
+                           data-i18n-placeholder="contactPlaceholder"
+                           required>
+
+                    <div class="form-text" data-i18n="contactHelp">
+                        An authorized barangay official may use this for follow-up.
+                    </div>
+                </div>
+
+                <button type="submit"
+                        class="btn btn-primary btn-lg w-100"
+                        id="submitReport"
+                        data-i18n="submitReport">
+                    Submit Report
+                </button>
+
+                <p class="small text-secondary mt-3 mb-0" data-i18n="reportFormReminder">
+                    Make sure all information is correct and complete before submitting.
+                </p>
+
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer class="text-center py-4">
+    <div class="container">
+        <p class="mb-1 fw-semibold">BantayBayan</p>
+        <p class="small mb-0" data-i18n="reportFooter">
+            Community Reporting and Flood Monitoring System
+        </p>
+    </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // =============================================
+    // MAP SETUP
+    // =============================================
+
+    const map = L.map("reportMap").setView([12.8797, 121.7740], 6);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    const latitudeInput = document.getElementById("latitude");
+    const longitudeInput = document.getElementById("longitude");
+    const locationMessage = document.getElementById("locationMessage");
+    const locationButton = document.getElementById("useMyLocation");
+    const clearButton = document.getElementById("clearLocation");
+    const searchButton = document.getElementById("searchLocation");
+    const mapSearch = document.getElementById("mapSearch");
+
+    const regionSelect = document.getElementById("region");
+    const provinceSelect = document.getElementById("province");
+    const citySelect = document.getElementById("cityMunicipality");
+    const barangaySelect = document.getElementById("barangay");
+    const administrativeMessage = document.getElementById("administrativeMessage");
+
+    let locationMarker = null;
+    let regionData = [];
+    let provinceData = [];
+    let cityData = [];
+    let barangayData = [];
+
+    function setSelectedLocation(lat, lng) {
+        latitudeInput.value = Number(lat).toFixed(7);
+        longitudeInput.value = Number(lng).toFixed(7);
+
+        locationMessage.textContent =
+            `Napiling lokasyon: ${latitudeInput.value}, ${longitudeInput.value}`;
+        locationMessage.className = "small mt-2 text-success";
+
+        if (!locationMarker) {
+            locationMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+            locationMarker.on("dragend", function (event) {
+                const position = event.target.getLatLng();
+                setSelectedLocation(position.lat, position.lng);
+            });
+        } else {
+            locationMarker.setLatLng([lat, lng]);
+        }
+    }
+
+    function clearSelectedLocation() {
+        if (locationMarker) {
+            map.removeLayer(locationMarker);
+            locationMarker = null;
+        }
+
+        latitudeInput.value = "";
+        longitudeInput.value = "";
+
+        locationMessage.textContent = "Wala pang napipiling lokasyon.";
+        locationMessage.className = "small mt-2 text-secondary";
+    }
+
+    map.on("click", function (event) {
+        setSelectedLocation(event.latlng.lat, event.latlng.lng);
+    });
+
+    locationButton.addEventListener("click", function () {
+        if (!navigator.geolocation) {
+            locationMessage.textContent =
+                "Hindi suportado ng browser ang location access. Pumili ng lokasyon sa mapa.";
+            locationMessage.className = "small mt-2 text-danger";
+            return;
+        }
+
+        locationMessage.textContent = "Kinukuha ang kasalukuyang lokasyon...";
+        locationMessage.className = "small mt-2 text-secondary";
+
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                map.setView([lat, lng], 17);
+                setSelectedLocation(lat, lng);
+            },
+            function () {
+                locationMessage.textContent =
+                    "Hindi nakuha ang lokasyon. Payagan ang location access o mag-pin nang mano-mano.";
+                locationMessage.className = "small mt-2 text-danger";
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    });
+
+    clearButton.addEventListener("click", clearSelectedLocation);
+
+    // =============================================
+    // SEARCH FOR A PLACE ON THE MAP
+    // =============================================
+
+    async function searchMapLocation() {
+        const query = mapSearch.value.trim();
+
+        if (!query) {
+            locationMessage.textContent = "Mag-type muna ng lugar na hahanapin.";
+            locationMessage.className = "small mt-2 text-danger";
+            return;
+        }
+
+        searchButton.disabled = true;
+        searchButton.textContent = "Searching...";
+
+        try {
+            const url =
+                "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
+                encodeURIComponent(query + ", Philippines");
+
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error("Hindi ma-search ang lugar ngayon.");
+            }
+
+            const results = await response.json();
+
+            if (!results.length) {
+                throw new Error("Walang nahanap na lugar. Subukan ang ibang pangalan.");
+            }
+
+            const result = results[0];
+            const lat = Number(result.lat);
+            const lng = Number(result.lon);
+
+            map.setView([lat, lng], 16);
+            setSelectedLocation(lat, lng);
+        } catch (error) {
+            locationMessage.textContent = error.message;
+            locationMessage.className = "small mt-2 text-danger";
+        } finally {
+            searchButton.disabled = false;
+            searchButton.textContent = "Search";
+        }
+    }
+
+    searchButton.addEventListener("click", searchMapLocation);
+
+    mapSearch.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            searchMapLocation();
+        }
+    });
+
+    // =============================================
+    // PHILIPPINES PSGC CASCADING DROPDOWNS
+    // =============================================
+
+    const PSGC_API = "https://psgc.gitlab.io/api";
+
+    async function fetchPSGC(path) {
+        const response = await fetch(`${PSGC_API}${path}`);
+
+        if (!response.ok) {
+            throw new Error(`Hindi ma-load ang location data (${response.status}).`);
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+            throw new Error("Hindi inaasahang format ng location data.");
+        }
+
+        return data;
+    }
+
+    function setOptions(select, items, placeholder, getValue, getLabel) {
+        select.innerHTML = "";
+
+        const firstOption = document.createElement("option");
+        firstOption.value = "";
+        firstOption.textContent = placeholder;
+        select.appendChild(firstOption);
+
+        items.forEach(item => {
+            const option = document.createElement("option");
+            option.value = getValue(item);
+            option.textContent = getLabel(item);
+            select.appendChild(option);
+        });
+
+        select.disabled = items.length === 0;
+    }
+
+    function selectedName(select, items) {
+        const selected = items.find(item => item.code === select.value);
+        return selected ? selected.name : "";
+    }
+
+    function resetSelect(select, placeholder) {
+        select.innerHTML = "";
+
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = placeholder;
+        select.appendChild(option);
+
+        select.disabled = true;
+    }
+
+    async function loadRegions() {
+        administrativeMessage.textContent = "Loading regions of the Philippines...";
+        regionSelect.disabled = true;
+
+        try {
+            regionData = await fetchPSGC("/regions/");
+            regionData.sort((a, b) => a.name.localeCompare(b.name));
+
+            setOptions(
+                regionSelect,
+                regionData,
+                "Select a region",
+                item => item.code,
+                item => item.name
+            );
+
+            administrativeMessage.textContent =
+                "Pumili ng region para makita ang mga province.";
+            administrativeMessage.className = "small mt-2 text-secondary";
+        } catch (error) {
+            console.error("Failed to load regions:", error);
+
+            resetSelect(regionSelect, "Unable to load regions");
+            administrativeMessage.textContent =
+                "Hindi ma-load ang regions. Tingnan ang internet connection at i-refresh ang page.";
+            administrativeMessage.className = "small mt-2 text-danger";
+        }
+    }
+
+    regionSelect.addEventListener("change", async function () {
+        const regionCode = regionSelect.value;
+
+        resetSelect(provinceSelect, "Loading provinces...");
+        resetSelect(citySelect, "Select a province first");
+        resetSelect(barangaySelect, "Select a city / municipality first");
+
+        provinceData = [];
+        cityData = [];
+        barangayData = [];
+
+        if (!regionCode) {
+            resetSelect(provinceSelect, "Select a region first");
+            administrativeMessage.textContent = "Pumili ng region.";
+            return;
+        }
+
+        administrativeMessage.textContent = "Loading provinces...";
+        const selectedRegion = regionData.find(item => item.code === regionCode);
+
+        try {
+            provinceData = await fetchPSGC(`/regions/${regionCode}/provinces/`);
+            provinceData.sort((a, b) => a.name.localeCompare(b.name));
+
+            if (provinceData.length > 0) {
+                setOptions(
+                    provinceSelect,
+                    provinceData,
+                    "Select a province",
+                    item => item.code,
+                    item => item.name
+                );
+
+                administrativeMessage.textContent =
+                    "Piliin ang province para makita ang mga city at municipality.";
+            } else {
+                provinceSelect.innerHTML = "";
+
+                const option = document.createElement("option");
+                option.value = "__NO_PROVINCE__";
+                option.textContent = "No province / NCR";
+                provinceSelect.appendChild(option);
+                provinceSelect.disabled = false;
+
+                cityData = await fetchPSGC(
+                    `/regions/${regionCode}/cities-municipalities/`
+                );
+
+                cityData.sort((a, b) => a.name.localeCompare(b.name));
+
+                setOptions(
+                    citySelect,
+                    cityData,
+                    "Select a city / municipality",
+                    item => item.code,
+                    item => item.name
+                );
+
+                administrativeMessage.textContent =
+                    "Pumili ng city o municipality.";
+            }
+
+            if (selectedRegion) {
+                await zoomToPlace(selectedRegion.name + ", Philippines", 8);
+            }
+        } catch (error) {
+            console.error("Failed to load provinces:", error);
+            resetSelect(provinceSelect, "Unable to load provinces");
+            administrativeMessage.textContent =
+                "Hindi ma-load ang provinces. Subukang pumili ulit ng region.";
+            administrativeMessage.className = "small mt-2 text-danger";
+        }
+    });
+
+    provinceSelect.addEventListener("change", async function () {
+        const provinceCode = provinceSelect.value;
+
+        resetSelect(citySelect, "Loading cities / municipalities...");
+        resetSelect(barangaySelect, "Select a city / municipality first");
+        cityData = [];
+        barangayData = [];
+
+        if (!provinceCode) {
+            resetSelect(citySelect, "Select a province first");
+            return;
+        }
+
+        if (provinceCode === "__NO_PROVINCE__") {
+            if (cityData.length === 0) {
+                const regionCode = regionSelect.value;
+
+                try {
+                    cityData = await fetchPSGC(
+                        `/regions/${regionCode}/cities-municipalities/`
+                    );
+
+                    cityData.sort((a, b) => a.name.localeCompare(b.name));
+
+                    setOptions(
+                        citySelect,
+                        cityData,
+                        "Select a city / municipality",
+                        item => item.code,
+                        item => item.name
+                    );
+                } catch (error) {
+                    console.error(error);
+                    resetSelect(citySelect, "Unable to load cities");
+                }
+            }
+            return;
+        }
+
+        administrativeMessage.textContent = "Loading cities and municipalities...";
+
+        const selectedProvince = provinceData.find(
+            item => item.code === provinceCode
+        );
+
+        try {
+            cityData = await fetchPSGC(
+                `/provinces/${provinceCode}/cities-municipalities/`
+            );
+
+            cityData.sort((a, b) => a.name.localeCompare(b.name));
+
+            setOptions(
+                citySelect,
+                cityData,
+                "Select a city / municipality",
+                item => item.code,
+                item => item.name
+            );
+
+            administrativeMessage.textContent =
+                "Pumili ng city o municipality para makita ang mga barangay.";
+
+            if (selectedProvince) {
+                await zoomToPlace(
+                    selectedProvince.name + ", Philippines",
+                    10
+                );
+            }
+        } catch (error) {
+            console.error("Failed to load cities:", error);
+            resetSelect(citySelect, "Unable to load cities");
+            administrativeMessage.textContent =
+                "Hindi ma-load ang cities. Subukang pumili ulit ng province.";
+            administrativeMessage.className = "small mt-2 text-danger";
+        }
+    });
+
+    citySelect.addEventListener("change", async function () {
+        const cityCode = citySelect.value;
+
+        resetSelect(barangaySelect, "Loading barangays...");
+        barangayData = [];
+
+        if (!cityCode) {
+            resetSelect(barangaySelect, "Select a city / municipality first");
+            return;
+        }
+
+        const selectedCity = cityData.find(item => item.code === cityCode);
+
+        administrativeMessage.textContent = "Loading barangays...";
+
+        try {
+            barangayData = await fetchPSGC(
+                `/cities-municipalities/${cityCode}/barangays/`
+            );
+
+            barangayData.sort((a, b) => a.name.localeCompare(b.name));
+
+            setOptions(
+                barangaySelect,
+                barangayData,
+                "Select a barangay",
+                item => item.code,
+                item => item.name
+            );
+
+            administrativeMessage.textContent = barangayData.length
+                ? "Piliin ang barangay, pagkatapos ay i-pin ang eksaktong lokasyon sa mapa."
+                : "Walang barangay data para sa napiling lugar.";
+
+            if (selectedCity) {
+                await zoomToPlace(
+                    selectedCity.name + ", Philippines",
+                    13
+                );
+            }
+        } catch (error) {
+            console.error("Failed to load barangays:", error);
+            resetSelect(barangaySelect, "Unable to load barangays");
+            administrativeMessage.textContent =
+                "Hindi ma-load ang barangays. Subukang pumili ulit ng city.";
+            administrativeMessage.className = "small mt-2 text-danger";
+        }
+    });
+
+    barangaySelect.addEventListener("change", async function () {
+        if (!barangaySelect.value) return;
+
+        const selectedBarangay = barangayData.find(
+            item => item.code === barangaySelect.value
+        );
+
+        if (selectedBarangay) {
+            const selectedCity = cityData.find(
+                item => item.code === citySelect.value
+            );
+
+            const selectedProvince = provinceData.find(
+                item => item.code === provinceSelect.value
+            );
+
+            const searchParts = [
+                selectedBarangay.name,
+                selectedCity?.name,
+                selectedProvince?.name,
+                "Philippines"
+            ].filter(Boolean);
+
+            await zoomToPlace(searchParts.join(", "), 16);
+
+            administrativeMessage.textContent =
+                "Barangay selected. I-click ang eksaktong lokasyon sa mapa para maglagay ng pin.";
+        }
+    });
+
+    async function zoomToPlace(query, zoomLevel) {
+        try {
+            const url =
+                "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
+                encodeURIComponent(query);
+
+            const response = await fetch(url);
+
+            if (!response.ok) return;
+
+            const results = await response.json();
+
+            if (results.length > 0) {
+                map.setView(
+                    [Number(results[0].lat), Number(results[0].lon)],
+                    zoomLevel
+                );
+            }
+        } catch (error) {
+            console.warn("Map zoom lookup failed:", error);
+        }
+    }
+
+    loadRegions();
+
+    window.addEventListener("load", function () {
+        setTimeout(function () {
+            map.invalidateSize();
+        }, 200);
+    });
+</script>
+
+<!-- Language translations -->
+<script src="js/lang.js"></script>
+
+<!-- Firebase report submission -->
+<script type="module" src="js/report.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
