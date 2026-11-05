@@ -1,0 +1,698 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="Report community issues to BantayBayan.">
+
+        <title>Report an Issue | BantayBayan</title>
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+        <style>
+            :root {
+                --bb-navy: #17365d;
+                --bb-blue: #214f85;
+                --bb-bg: #f3f6fa;
+                --bb-text: #263445;
+                --bb-muted: #66758a;
+                --bb-border: #e0e7ef;
+            }
+
+            body {
+                background: var(--bb-bg);
+                color: var(--bb-text);
+                font-family: "Segoe UI", Arial, sans-serif;
+                line-height: 1.65;
+            }
+
+            .navbar {
+                background: var(--bb-navy) !important;
+                padding: 13px 0;
+            }
+
+            .navbar-brand {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                letter-spacing: .2px;
+            }
+
+            .brand-mark {
+                width: 38px;
+                height: 38px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255,255,255,.12);
+                border: 1px solid rgba(255,255,255,.2);
+                border-radius: 8px;
+            }
+
+            .navbar .nav-link {
+                color: rgba(255,255,255,.84);
+                font-weight: 500;
+            }
+
+            .navbar .nav-link:hover,
+            .navbar .nav-link.active {
+                color: #fff;
+            }
+
+            .navbar .nav-link.active {
+                border-bottom: 2px solid #fff;
+            }
+
+            .language-area {
+                display: flex;
+                align-items: center;
+                margin-left: 16px;
+            }
+
+            .language-area button {
+                min-width: 44px;
+            }
+
+            .page-header {
+                padding: 35px 0;
+                color: white;
+                background: linear-gradient(120deg, var(--bb-navy), var(--bb-blue));
+            }
+
+            .page-header .container {
+                position: relative;
+            }
+
+            .page-label {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 7px 12px;
+                border: 1px solid rgba(255,255,255,.25);
+                border-radius: 6px;
+                background: rgba(255,255,255,.1);
+                font-size: .84rem;
+                font-weight: 600;
+            }
+
+            .page-description {
+                max-width: 720px;
+                color: rgba(255,255,255,.85);
+            }
+
+            .report-form {
+                padding: 28px;
+                background: white;
+                border: 1px solid var(--bb-border);
+                border-radius: 12px;
+                box-shadow: 0 5px 20px rgba(20,50,90,.05);
+            }
+
+            .section-heading {
+                color: var(--bb-navy);
+                font-weight: 700;
+            }
+
+            .section-description {
+                color: var(--bb-muted);
+                font-size: .92rem;
+            }
+
+            .section-icon {
+                width: 44px;
+                height: 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                border-radius: 9px;
+                background: #eaf1f9;
+                color: var(--bb-blue);
+                font-size: 19px;
+            }
+
+            .location-section {
+                padding: 20px;
+                background: #f8faff;
+                border: 1px solid #dfe7f1;
+                border-radius: 10px;
+            }
+
+            .map-instructions {
+                padding: 13px 15px;
+                background: #edf4fc;
+                border: 1px solid #d7e6f7;
+                border-radius: 8px;
+                color: #234a76;
+            }
+
+            #reportMap {
+                position: relative;
+                z-index: 1;
+                width: 100%;
+                height: 380px;
+                border: 1px solid var(--bb-border);
+                border-radius: 9px;
+                overflow: hidden;
+            }
+
+            .location-coordinate {
+                overflow-wrap: anywhere;
+                font-size: .9rem;
+            }
+
+            #region,
+            #province,
+            #cityMunicipality,
+            #barangay,
+            #purok {
+                position: relative;
+                z-index: 2;
+                pointer-events: auto;
+                cursor: pointer;
+            }
+
+            .form-control,
+            .form-select {
+                min-height: 45px;
+                border-color: #d5deea;
+                border-radius: 7px;
+            }
+
+            textarea.form-control {
+                min-height: 115px;
+            }
+
+            .form-control:focus,
+            .form-select:focus {
+                border-color: #6b95c3;
+                box-shadow: 0 0 0 .2rem rgba(33,79,133,.12);
+            }
+
+            .btn {
+                border-radius: 7px;
+            }
+
+            .btn-primary {
+                background: var(--bb-blue);
+                border-color: var(--bb-blue);
+            }
+
+            .btn-primary:hover {
+                background: var(--bb-navy);
+                border-color: var(--bb-navy);
+            }
+
+            #submitReport {
+                min-height: 49px;
+                font-weight: 600;
+            }
+
+            .required-mark {
+                color: #b42332;
+            }
+
+            footer {
+                margin-top: 25px;
+                background: white;
+                border-top: 1px solid var(--bb-border);
+            }
+
+            .footer-brand {
+                color: var(--bb-navy);
+                font-weight: 700;
+            }
+
+            @media (max-width: 991px) {
+                .language-area {
+                    margin: 12px 0 4px;
+                }
+
+                .navbar .nav-link.active {
+                    border-bottom: none;
+                }
+            }
+
+            @media (max-width: 576px) {
+                main.container {
+                    padding-top: 24px !important;
+                    padding-bottom: 30px !important;
+                }
+
+                .page-header {
+                    padding: 28px 0;
+                }
+
+                .page-header h1 {
+                    font-size: 1.8rem;
+                }
+
+                .report-form {
+                    padding: 18px;
+                }
+
+                .location-section {
+                    padding: 15px;
+                }
+
+                #reportMap {
+                    height: 320px;
+                }
+
+                #searchLocation {
+                    min-height: 43px;
+                }
+
+                #useMyLocation,
+                #clearLocation {
+                    flex: 1 1 100%;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="dashboard.html">
+                <span class="brand-mark" aria-hidden="true">
+                    <i class="fa-solid fa-landmark"></i>
+                </span>
+                <span>BantayBayan</span>
+            </a>
+
+            <button class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#mainNavbar"
+                    aria-controls="mainNavbar"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html" data-i18n="home">
+                            <i class="fa-solid fa-gauge-high me-1" aria-hidden="true"></i>
+                            Home
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link active"
+                        href="report.html"
+                        data-i18n="reportIssue">
+                            <i class="fa-solid fa-file-circle-plus me-1" aria-hidden="true"></i>
+                            Report an Issue
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="flood.html" data-i18n="floodWatch">
+                            <i class="fa-solid fa-water me-1" aria-hidden="true"></i>
+                            Flood Watch
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="language-area">
+                    <div class="d-flex align-items-center gap-1"
+                        role="group"
+                        aria-label="Choose language">
+                        <button type="button"
+                                class="btn btn-sm btn-light"
+                                data-language="en"
+                                aria-label="English">
+                            EN
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-sm btn-outline-light"
+                                data-language="fil"
+                                aria-label="Filipino">
+                            FIL
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
+            <span class="page-label mb-3" data-i18n="communityReporting">
+                <i class="fa-solid fa-building-shield" aria-hidden="true"></i>
+                Community Reporting
+            </span>
+
+            <h1 class="fw-bold mt-3" data-i18n="reportPageTitle">
+                Report a Community Issue
+            </h1>
+
+            <p class="page-description mb-0" data-i18n="reportPageDescription">
+                Help your community by reporting a problem and selecting its exact location.
+            </p>
+        </div>
+    </header>
+
+    <main class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+
+                <div id="formMessage"
+                    class="alert d-none"
+                    role="alert"
+                    aria-live="polite"></div>
+
+                <form id="reportForm" class="report-form" novalidate>
+
+                    <!-- Issue Type -->
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="section-icon" aria-hidden="true">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                        </div>
+
+                        <div>
+                            <h2 class="h5 section-heading mb-1" data-i18n="typeOfIssue">
+                                Type of Issue
+                            </h2>
+                            <p class="section-description mb-0">
+                                Select the problem you want to report.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="issueType" class="form-label fw-semibold" data-i18n="typeOfIssue">
+                            Type of Issue <span class="required-mark">*</span>
+                        </label>
+
+                        <select id="issueType" name="type" class="form-select" required>
+                            <option value="" data-i18n="selectIssue">Select an issue</option>
+                            <option value="garbage" data-i18n="garbageIssue">Garbage / Trash</option>
+                            <option value="flooding" data-i18n="floodingIssue">Flooding</option>
+                            <option value="canal" data-i18n="canalIssue">Blocked Canal</option>
+                            <option value="streetlight" data-i18n="streetlightIssue">Broken Streetlight</option>
+                            <option value="others" data-i18n="otherIssue">Other Problems</option>
+                        </select>
+                    </div>
+
+                    <!-- Administrative Location -->
+                    <div class="location-section mb-4">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <div class="section-icon" aria-hidden="true">
+                                <i class="fa-solid fa-map-location-dot"></i>
+                            </div>
+
+                            <div>
+                                <h2 class="h5 section-heading mb-1" data-i18n="locationInformation">
+                                    Location Information
+                                </h2>
+                                <p class="section-description mb-0" data-i18n="locationInstructions">
+                                    Select where the problem happened, starting from the region down to the barangay.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 mt-4">
+                            <label for="region" class="form-label fw-semibold" data-i18n="region">
+                                Region <span class="required-mark">*</span>
+                            </label>
+
+                            <select id="region" name="region" class="form-select" required>
+                                <option value="" data-i18n="loadingRegions">Loading regions...</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="province" class="form-label fw-semibold" data-i18n="province">
+                                Province <span class="required-mark">*</span>
+                            </label>
+
+                            <select id="province" name="province" class="form-select" disabled required>
+                                <option value="" data-i18n="selectRegionFirst">Select a region first</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="cityMunicipality" class="form-label fw-semibold" data-i18n="cityMunicipality">
+                                City / Municipality <span class="required-mark">*</span>
+                            </label>
+
+                            <select id="cityMunicipality"
+                                    name="cityMunicipality"
+                                    class="form-select"
+                                    disabled
+                                    required>
+                                <option value="" data-i18n="selectProvinceFirst">
+                                    Select a province first
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="barangay" class="form-label fw-semibold" data-i18n="barangay">
+                                Barangay <span class="required-mark">*</span>
+                            </label>
+
+                            <select id="barangay" name="barangay" class="form-select" disabled required>
+                                <option value="" data-i18n="selectCityFirst">
+                                    Select a city / municipality first
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Purok -->
+                        <div class="mb-2">
+                            <label for="purok" class="form-label fw-semibold" data-i18n="purok">
+                                Purok <span class="required-mark">*</span>
+                            </label>
+
+                            <select id="purok" name="purok" class="form-select" required>
+                                <option value="" data-i18n="selectPurok">Select a purok</option>
+                                <option value="Purok 1">Purok 1</option>
+                                <option value="Purok 2">Purok 2</option>
+                                <option value="Purok 3">Purok 3</option>
+                                <option value="Purok 4">Purok 4</option>
+                                <option value="Purok 5">Purok 5</option>
+                                <option value="Purok 6">Purok 6</option>
+                                <option value="Purok 7">Purok 7</option>
+                            </select>
+                        </div>
+
+                        <div id="administrativeMessage"
+                            class="small mt-2 text-secondary"
+                            aria-live="polite"
+                            data-i18n="loadingLocations">
+                            Loading Philippine locations...
+                        </div>
+                    </div>
+
+                    <!-- Exact Map Location -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="section-icon" aria-hidden="true">
+                                <i class="fa-solid fa-location-crosshairs"></i>
+                            </div>
+
+                            <div>
+                                <h2 class="h5 section-heading mb-1" data-i18n="exactLocation">
+                                    Exact Location of the Problem
+                                </h2>
+                                <p class="section-description mb-0">
+                                    Place a pin at the location where the issue occurred.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="map-instructions mb-3">
+                            <strong data-i18n="pinInstructions">
+                                Select your location and place a pin on the map.
+                            </strong>
+
+                            <div class="small mt-1" data-i18n="locationRequired">
+                                Select the exact location on the map before submitting.
+                            </div>
+                        </div>
+
+                        <label for="mapSearch" class="form-label fw-semibold" data-i18n="searchLocation">
+                            Search Location
+                        </label>
+
+                        <div class="input-group mb-3">
+                            <input type="search"
+                                id="mapSearch"
+                                class="form-control"
+                                placeholder="Search a place or landmark..."
+                                data-i18n-placeholder="mapSearchPlaceholder">
+
+                            <button type="button"
+                                    class="btn btn-outline-primary"
+                                    id="searchLocation"
+                                    data-i18n="search">
+                                <i class="fa-solid fa-magnifying-glass me-1" aria-hidden="true"></i>
+                                Search
+                            </button>
+                        </div>
+
+                        <div id="reportMap" aria-label="Map for selecting the problem location"></div>
+
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm"
+                                    id="useMyLocation"
+                                    data-i18n="useCurrentLocation">
+                                <i class="fa-solid fa-location-arrow me-1" aria-hidden="true"></i>
+                                Use My Current Location
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-outline-secondary btn-sm"
+                                    id="clearLocation"
+                                    data-i18n="clearPin">
+                                <i class="fa-solid fa-eraser me-1" aria-hidden="true"></i>
+                                Clear Pin
+                            </button>
+                        </div>
+
+                        <div class="form-text mt-2" data-i18n="reportFormReminder">
+                            Make sure all information is correct and complete before submitting.
+                        </div>
+
+                        <div id="locationMessage"
+                            class="location-coordinate small mt-2 text-secondary"
+                            aria-live="polite"
+                            data-i18n="noLocationSelected">
+                            No location selected yet.
+                        </div>
+
+                        <input type="hidden" id="latitude" name="latitude">
+                        <input type="hidden" id="longitude" name="longitude">
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <label for="description" class="form-label fw-semibold" data-i18n="description">
+                            Description <span class="required-mark">*</span>
+                        </label>
+
+                        <textarea id="description"
+                                name="description"
+                                class="form-control"
+                                rows="4"
+                                minlength="5"
+                                maxlength="1000"
+                                placeholder="Describe the problem and its location..."
+                                data-i18n-placeholder="descriptionPlaceholder"
+                                required></textarea>
+
+                        <div class="form-text" data-i18n="descriptionHelp">
+                            Enter 5 to 1000 characters.
+                        </div>
+                    </div>
+
+                    <!-- Photo -->
+                    <div class="mb-4">
+                        <label for="photo" class="form-label fw-semibold" data-i18n="photo">
+                            Photo <span class="required-mark">*</span>
+                        </label>
+
+                        <input type="file"
+                            id="photo"
+                            name="photo"
+                            class="form-control"
+                            accept="image/jpeg,image/png,image/webp"
+                            required>
+
+                        <div class="form-text" data-i18n="photoHelp">
+                            A photo of the problem is required. JPG, PNG, or WebP; up to 5 MB before compression.
+                        </div>
+                    </div>
+
+                    <!-- Contact Name -->
+                    <div class="mb-4">
+                        <label for="contactName" class="form-label fw-semibold" data-i18n="yourName">
+                            Your Name <span class="required-mark">*</span>
+                        </label>
+
+                        <input type="text"
+                            id="contactName"
+                            name="contactName"
+                            class="form-control"
+                            maxlength="100"
+                            placeholder="Enter your name"
+                            data-i18n-placeholder="yourNamePlaceholder"
+                            required>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="mb-4">
+                        <label for="contactInfo" class="form-label fw-semibold" data-i18n="contactInformation">
+                            Contact Information <span class="required-mark">*</span>
+                        </label>
+
+                        <input type="text"
+                            id="contactInfo"
+                            name="contactInfo"
+                            class="form-control"
+                            maxlength="200"
+                            placeholder="Phone number or email"
+                            data-i18n-placeholder="contactPlaceholder"
+                            required>
+
+                        <div class="form-text" data-i18n="contactHelp">
+                            An authorized barangay official may use this for follow-up.
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                            class="btn btn-primary btn-lg w-100"
+                            id="submitReport"
+                            data-i18n="submitReport">
+                        <i class="fa-solid fa-paper-plane me-2" aria-hidden="true"></i>
+                        Submit Report
+                    </button>
+
+                    <p class="small text-secondary mt-3 mb-0" data-i18n="reportFormReminder">
+                        Make sure all information is correct and complete before submitting.
+                    </p>
+
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center py-4">
+        <div class="container">
+            <p class="footer-brand mb-1">
+                <i class="fa-solid fa-landmark me-2" aria-hidden="true"></i>
+                BantayBayan
+            </p>
+
+            <p class="small text-secondary mb-0" data-i18n="reportFooter">
+                Community Reporting and Flood Monitoring System
+            </p>
+        </div>
+    </footer>
+
+    
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/report-map.js"></script>
+<script src="js/lang.js"></script>
+<script src="js/location-dropdowns.js"></script>
+<script type="module" src="js/report.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    </body>
+    </html>
