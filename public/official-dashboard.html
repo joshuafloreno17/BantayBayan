@@ -1016,6 +1016,29 @@
 
                 <hr class="section-divider">
 
+                <!-- Pangalan at contact ng nag-report (galing sa reportContacts, officials lang) -->
+                <div class="row g-3 mb-3" id="detailContactRow">
+                    <div class="col-sm-6">
+                        <div class="detail-label">Reporter Name</div>
+                        <div class="detail-value" id="detailContactName">—</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="detail-label">Contact</div>
+                        <div class="detail-value" id="detailContactInfo">—</div>
+                    </div>
+                </div>
+
+                <div class="mb-3" id="detailTypeWrapper">
+                    <label for="detailType" class="form-label">Issue Type</label>
+                    <select id="detailType" class="form-select">
+                        <option value="garbage">Garbage</option>
+                        <option value="flooding">Flooding</option>
+                        <option value="canal">Blocked Canal</option>
+                        <option value="streetlight">Streetlight</option>
+                        <option value="others">Others</option>
+                    </select>
+                </div>
+
                 <div class="mb-2">
                     <label for="detailStatus" class="form-label">Update Report Status</label>
                     <select id="detailStatus" class="form-select">
@@ -1034,6 +1057,9 @@
             </div>
 
             <div class="modal-footer px-4 py-3">
+                <button type="button" class="btn btn-outline-danger me-auto" id="deleteReportButton">
+                    <i class="fa-solid fa-trash me-1" aria-hidden="true"></i> Delete
+                </button>
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                     Close
                 </button>

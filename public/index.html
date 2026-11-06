@@ -8,6 +8,7 @@
     <title>BantayBayan | Community Watch</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
@@ -442,8 +443,23 @@
         </div>
     </header>
 
-    <!-- About Section -->
+    <!-- Flood warning banner: ipinapakita ng js/map.js kapag 3+ flood reports sa iisang purok sa loob ng 1 oras -->
+    <div id="floodBanner" class="alert alert-danger rounded-0 mb-0 text-center fw-semibold d-none" role="alert"></div>
+
     <main class="container py-5">
+
+        <!-- Community Issue Map -->
+        <section id="community-map" class="mb-5">
+            <h2 class="h4 fw-bold mb-2">Community Issue Map</h2>
+            <p class="text-secondary small mb-3">
+                <span style="color:#dc3545">&#9679;</span> Pending &nbsp;
+                <span style="color:#ffc107">&#9679;</span> Processing &nbsp;
+                <span style="color:#198754">&#9679;</span> Resolved &nbsp;
+                <span style="color:#6c757d">&#9679;</span> Rejected / Delivered / Cancelled &nbsp;
+                <span style="color:#dc3545">&#9711;</span> Flood warning area
+            </p>
+            <div id="map" class="rounded border" style="height: 420px;"></div>
+        </section>
 
         <section id="about" class="mb-5 py-2">
             <div class="row align-items-center g-4">
@@ -604,7 +620,10 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/lang.js"></script>
+    <script src="js/config.js"></script>
+    <script type="module" src="js/map.js"></script>
 
 </body>
 </html>

@@ -6,7 +6,7 @@ import {
     onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
 
-const OFFICIAL_UID = "lA4mlJYUdBSsu8qZjTOSeFet3Tr2";
+import { isOfficial } from "./official-check.js";
 
 const loginForm = document.getElementById("loginForm");
 const loginMessage = document.getElementById("loginMessage");
@@ -23,12 +23,12 @@ function showMessage(message, type = "danger") {
     loginMessage.classList.remove("d-none");
 }
 
-function redirectByAccount(user) {
+async function redirectByAccount(user) {
     if (!user || redirectStarted) return;
 
     redirectStarted = true;
 
-    if (user.uid === OFFICIAL_UID) {
+    if (await isOfficial(user)) {
         window.location.replace("official-dashboard.html");
     } else {
         window.location.replace("dashboard.html");
@@ -75,7 +75,7 @@ if (loginForm) {
                 "success"
             );
 
-            redirectByAccount(credential.user);
+            await redirectByAccount(credential.user);
 
         } catch (error) {
             console.error("Login error:", error);

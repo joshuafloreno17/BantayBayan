@@ -6,6 +6,8 @@ import {
     serverTimestamp,
     query,
     orderBy,
+    where,
+    Timestamp,
     onSnapshot
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 
@@ -349,6 +351,7 @@ await addDoc(collection(db, "floodReports"), {
 function startFloodAlertListener() {
     const reportsQuery = query(
         collection(db, "floodReports"),
+        where("createdAt", ">=", Timestamp.fromMillis(Date.now() - 60 * 60 * 1000)),
         orderBy("createdAt", "desc")
     );
 

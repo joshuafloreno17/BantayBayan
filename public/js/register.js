@@ -81,7 +81,7 @@ registerForm.addEventListener("submit", async event => {
         registerForm.reset();
 
         setTimeout(() => {
-            window.location.href = "login.html";
+            window.location.href = "resident-login.html";
         }, 1500);
 
     } catch (error) {

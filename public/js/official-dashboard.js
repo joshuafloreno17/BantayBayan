@@ -8,7 +8,10 @@ import {
 import {
     collection,
     doc,
+    getDoc,
     updateDoc,
+    deleteDoc,
+    serverTimestamp,
     onSnapshot
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 
@@ -16,7 +19,7 @@ import {
 // CONFIGURATION
 // ==========================================
 
-const OFFICIAL_UID = "lA4mlJYUdBSsu8qZjTOSeFet3Tr2";
+import { isOfficial } from "./official-check.js";
 
 const DEFAULT_MAP_CENTER = [12.8797, 121.7740];
 const DEFAULT_MAP_ZOOM = 6;
@@ -92,6 +95,10 @@ const detailModal =
 const saveStatusButton = $("saveReportStatusButton");
 const detailStatus = $("detailStatus");
 const detailMessage = $("detailMessage");
+const detailType = $("detailType");
+const detailTypeWrapper = $("detailTypeWrapper");
+const detailContactRow = $("detailContactRow");
+const deleteReportButton = $("deleteReportButton");
 
 const totalFloodReportsElement = $("totalFloodReports");
 const activeFloodWarningsElement = $("activeFloodWarnings");
@@ -110,6 +117,7 @@ const floodReportsCount = $("floodReportsCount");
 // ==========================================
 
 let currentUser = null;
+let officialVerified = false;
 let allReports = [];
 let allFloodReports = [];
 
@@ -1262,7 +1270,51 @@ function openReportDetails(reportId, reportType = "resident") {
         saveStatusButton.textContent = "Save Status";
     }
 
+    // Type: resident reports lang ang may type na puwedeng palitan.
+    detailTypeWrapper?.classList.toggle("d-none", isFlood);
+
+    if (detailType && !isFlood) {
+        const currentType = getReportType(report);
+        detailType.value = ISSUE_LABELS[currentType] ? currentType : "others";
+    }
+
+    if (deleteReportButton) {
+        deleteReportButton.disabled = false;
+    }
+
+    loadReportContact(report, isFlood);
+
     detailModal.show();
+}
+
+// Kinukuha ang pangalan at contact mula sa reportContacts/{reportId}.
+// Resident reports lang ang may ganitong document.
+async function loadReportContact(report, isFlood) {
+    detailContactRow?.classList.toggle("d-none", isFlood);
+    setText("detailContactName", isFlood ? "—" : "Loading...");
+    setText("detailContactInfo", isFlood ? "—" : "Loading...");
+
+    if (isFlood) return;
+
+    const requestedId = report.id;
+
+    try {
+        const snapshot = await getDoc(doc(db, "reportContacts", report.id));
+
+        // Baka ibang report na ang nakabukas habang naglo-load.
+        if (selectedReport?.id !== requestedId) return;
+
+        const contact = snapshot.exists() ? snapshot.data() : {};
+        setText("detailContactName", contact.name || "Not provided");
+        setText("detailContactInfo", contact.contact || "Not provided");
+    } catch (error) {
+        console.error("Report contact error:", error);
+
+        if (selectedReport?.id !== requestedId) return;
+
+        setText("detailContactName", "Hindi ma-load");
+        setText("detailContactInfo", "Hindi ma-load");
+    }
 }
 
 // ==========================================
@@ -1332,7 +1384,7 @@ if (detailModalElement) {
 
 if (saveStatusButton) {
     saveStatusButton.addEventListener("click", async () => {
-        if (!currentUser || currentUser.uid !== OFFICIAL_UID) {
+        if (!currentUser || !officialVerified) {
             showDetailMessage(
                 "Wala kang pahintulot na mag-update ng report."
             );
@@ -1356,16 +1408,29 @@ if (saveStatusButton) {
                 ? "floodReports"
                 : "reports";
 
+        const changes = {
+            status: newStatus,
+            updatedAt: serverTimestamp()
+        };
+
+        if (selectedReportType !== "flood" && detailType && ISSUE_LABELS[detailType.value]) {
+            changes.type = detailType.value;
+        }
+
         saveStatusButton.disabled = true;
         saveStatusButton.textContent = "Saving...";
 
         try {
             await updateDoc(
                 doc(db, collectionName, selectedReport.id),
-                { status: newStatus }
+                changes
             );
 
             selectedReport.status = newStatus;
+
+            if (changes.type) {
+                selectedReport.type = changes.type;
+            }
 
             showDetailMessage(
                 "Matagumpay na na-update ang report status.",
@@ -1383,6 +1448,56 @@ if (saveStatusButton) {
         } finally {
             saveStatusButton.disabled = false;
             saveStatusButton.textContent = "Save Status";
+        }
+    });
+}
+
+// ==========================================
+// DELETE REPORT (fake o duplicate)
+// ==========================================
+
+if (deleteReportButton) {
+    deleteReportButton.addEventListener("click", async () => {
+        if (!currentUser || !officialVerified) {
+            showDetailMessage("Wala kang pahintulot na mag-delete ng report.");
+            return;
+        }
+
+        if (!selectedReport) {
+            showDetailMessage("Walang napiling report.");
+            return;
+        }
+
+        const confirmed = window.confirm(
+            "Sigurado ka bang ide-delete ang report na ito? Hindi na ito maibabalik."
+        );
+
+        if (!confirmed) return;
+
+        const isFlood = selectedReportType === "flood";
+        const reportId = selectedReport.id;
+
+        deleteReportButton.disabled = true;
+
+        try {
+            await deleteDoc(doc(db, isFlood ? "floodReports" : "reports", reportId));
+
+            if (!isFlood) {
+                // Burahin din ang personal na contact info (Data Privacy Act).
+                await deleteDoc(doc(db, "reportContacts", reportId)).catch((error) => {
+                    console.warn("Contact delete error:", error);
+                });
+            }
+
+            selectedReport = null;
+            detailModal?.hide();
+            showStatusToast("Report Deleted", "Na-delete na ang report.");
+        } catch (error) {
+            console.error("Delete report error:", error);
+            showDetailMessage(
+                "Hindi na-delete ang report. Pakisuri ang Firestore Rules at connection."
+            );
+            deleteReportButton.disabled = false;
         }
     });
 }
@@ -1733,7 +1848,7 @@ function startFloodReportsListener() {
 
 // Refresh warning count habang tumatagal ang reports.
 window.setInterval(() => {
-    if (currentUser && currentUser.uid === OFFICIAL_UID) {
+    if (currentUser && officialVerified) {
         renderFloodAlerts();
     }
 }, 30000);
@@ -1813,7 +1928,9 @@ onAuthStateChanged(auth, async user => {
         return;
     }
 
-    if (user.uid !== OFFICIAL_UID) {
+    officialVerified = await isOfficial(user);
+
+    if (!officialVerified) {
         stopReportListeners();
 
         try {

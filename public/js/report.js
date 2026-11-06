@@ -53,7 +53,7 @@ const authReadyPromise = new Promise((resolve) => {
             authReady = true;
 
             if (!user) {
-                window.location.replace("login.html");
+                window.location.replace("resident-login.html");
             }
 
             if (!resolved) {
