@@ -1,3 +1,4 @@
+
 import { auth, db } from "./firebase-config.js";
 
 import {
@@ -6,7 +7,8 @@ import {
     serverTimestamp,
     query,
     orderBy,
-    onSnapshot
+    onSnapshot,
+    where
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 
 const floodForm = document.getElementById("floodForm");
@@ -274,27 +276,28 @@ floodForm.addEventListener("submit", async function (event) {
 
         showFloodMessage("Submitting flood report...", "info", true);
 
-const user = auth.currentUser;
+        const user = auth.currentUser;
 
-if (!user) {
-    showFloodMessage(
-        "Please log in before submitting a flood report.",
-        "danger",
-        true
-    );
-    return;
-}
+        if (!user) {
+            showFloodMessage(
+                "Please log in before submitting a flood report.",
+                "danger",
+                true
+            );
+            return;
+        }
 
-await addDoc(collection(db, "floodReports"), {
-    userId: user.uid,
-    purok,
-    floodLevel,
-    description,
-    latitude,
-    longitude,
-    photoUrl: compressedPhoto,
-    createdAt: serverTimestamp()
-});
+        await addDoc(collection(db, "floodReports"), {
+            userId: user.uid,
+            purok,
+            floodLevel,
+            description,
+            latitude,
+            longitude,
+            photoUrl: compressedPhoto,
+            approvalStatus: "For Approval",
+            createdAt: serverTimestamp()
+        });
 
         floodForm.reset();
 
@@ -349,6 +352,7 @@ await addDoc(collection(db, "floodReports"), {
 function startFloodAlertListener() {
     const reportsQuery = query(
         collection(db, "floodReports"),
+        where("approvalStatus", "==", "Approved"),
         orderBy("createdAt", "desc")
     );
 
@@ -362,13 +366,23 @@ function startFloodAlertListener() {
             snapshot.forEach((documentSnapshot) => {
                 const report = documentSnapshot.data();
 
-                if (!report.purok || !report.createdAt) return;
+                if (
+                    report.approvalStatus !== "Approved" ||
+                    !report.purok ||
+                    !report.createdAt
+                ) {
+                    return;
+                }
 
-              const createdAt = report.createdAt.toMillis();
+                const createdAt = report.createdAt.toMillis();
 
-if (createdAt <= 0 || createdAt < oneHourAgo || createdAt > Date.now()) {
-    return;
-}
+                if (
+                    createdAt <= 0 ||
+                    createdAt < oneHourAgo ||
+                    createdAt > Date.now()
+                ) {
+                    return;
+                }
 
                 recentCounts[report.purok] =
                     (recentCounts[report.purok] || 0) + 1;

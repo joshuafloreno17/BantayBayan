@@ -368,7 +368,6 @@
         .status-pending { background: #fff3cd; color: #664d03; }
         .status-processing { background: #dceaff; color: #084298; }
         .status-resolved,
-        .status-delivered { background: #d1e7dd; color: #0f5132; }
         .status-rejected,
         .status-cancelled { background: #f8d7da; color: #842029; }
 
@@ -474,65 +473,65 @@
             .table thead th,
             .table tbody td { padding: 11px 10px; }
         }
-.status-toast {
-    position: fixed;
-    top: 24px;
-    right: 24px;
-    z-index: 99999;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: min(380px, calc(100% - 32px));
-    padding: 16px 18px;
-    background: #ffffff;
-    border-left: 5px solid #198754;
-    border-radius: 10px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    color: #212529;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateX(30px);
-    transition: all 0.3s ease;
-}
 
-.status-toast.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(0);
-}
+        .status-toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: min(380px, calc(100% - 32px));
+            padding: 16px 18px;
+            background: #ffffff;
+            border-left: 5px solid #198754;
+            border-radius: 10px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            color: #212529;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(30px);
+            transition: all 0.3s ease;
+        }
 
-.status-toast-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    background: #198754;
-    color: #ffffff;
-    border-radius: 50%;
-    font-size: 20px;
-    font-weight: bold;
-}
+        .status-toast.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
 
-#statusToastTitle {
-    display: block;
-    font-size: 14px;
-    margin-bottom: 3px;
-}
+        .status-toast-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            background: #198754;
+            color: #ffffff;
+            border-radius: 50%;
+            font-size: 20px;
+            font-weight: bold;
+        }
 
-#statusToastMessage {
-    font-size: 13px;
-    color: #6c757d;
-}
+        #statusToastTitle {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
 
-@media (max-width: 576px) {
-    .status-toast {
-        top: 12px;
-        right: 12px;
-    }
-}
+        #statusToastMessage {
+            font-size: 13px;
+            color: #6c757d;
+        }
 
+        @media (max-width: 576px) {
+            .status-toast {
+                top: 12px;
+                right: 12px;
+            }
+        }
     </style>
 </head>
 
@@ -608,22 +607,21 @@
 
     <div id="dashboardMessage" class="alert d-none" role="alert"></div>
 
-<div
-    id="statusToast"
-    class="status-toast"
-    role="alert"
-    aria-live="polite"
-    aria-atomic="true"
->
-    <span class="status-toast-icon">✓</span>
-    <div>
-        <strong id="statusToastTitle">Status Updated Successfully!</strong>
-        <div id="statusToastMessage">
-            The report status has been successfully updated.
+    <div
+        id="statusToast"
+        class="status-toast"
+        role="alert"
+        aria-live="polite"
+        aria-atomic="true"
+    >
+        <span class="status-toast-icon">âœ“</span>
+        <div>
+            <strong id="statusToastTitle">Status Updated Successfully!</strong>
+            <div id="statusToastMessage">
+                The report status has been successfully updated.
+            </div>
         </div>
     </div>
-</div>
-
 
     <!-- RESIDENT REPORT SUMMARY -->
     <section class="row g-3 mb-4" aria-label="Resident report summary">
@@ -634,7 +632,7 @@
                         <span class="stat-label">Total Reports</span>
                         <span class="stat-icon icon-blue"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span>
                     </div>
-                    <div class="stat-number" id="totalReports">—</div>
+                    <div class="stat-number" id="totalReports">â€”</div>
                     <div class="stat-caption">All resident submissions</div>
                 </div>
             </div>
@@ -647,7 +645,7 @@
                         <span class="stat-label">Pending</span>
                         <span class="stat-icon icon-amber"><i class="fa-regular fa-clock" aria-hidden="true"></i></span>
                     </div>
-                    <div class="stat-number" id="pendingReports">—</div>
+                    <div class="stat-number" id="pendingReports">â€”</div>
                     <div class="stat-caption">Awaiting official action</div>
                 </div>
             </div>
@@ -660,7 +658,7 @@
                         <span class="stat-label">Processing</span>
                         <span class="stat-icon icon-blue"><i class="fa-solid fa-rotate" aria-hidden="true"></i></span>
                     </div>
-                    <div class="stat-number" id="processingReports">—</div>
+                    <div class="stat-number" id="processingReports">â€”</div>
                     <div class="stat-caption">Currently being handled</div>
                 </div>
             </div>
@@ -673,7 +671,7 @@
                         <span class="stat-label">Resolved</span>
                         <span class="stat-icon icon-green"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></span>
                     </div>
-                    <div class="stat-number" id="resolvedReports">—</div>
+                    <div class="stat-number" id="resolvedReports">â€”</div>
                     <div class="stat-caption">Completed reports</div>
                 </div>
             </div>
@@ -758,7 +756,7 @@
                             <span class="stat-icon icon-purple"><i class="fa-solid fa-location-dot" aria-hidden="true"></i></span>
                         </div>
                         <div class="fw-bold" id="latestFloodReport">No flood reports yet</div>
-                        <div class="stat-caption" id="latestFloodReportTime">—</div>
+                        <div class="stat-caption" id="latestFloodReportTime">â€”</div>
                     </div>
                 </div>
             </div>
@@ -824,7 +822,6 @@
                             <option value="Processing">Processing</option>
                             <option value="Resolved">Resolved</option>
                             <option value="Rejected">Rejected</option>
-                            <option value="Delivered">Delivered</option>
                             <option value="Cancelled">Cancelled</option>
                         </select>
                     </div>
@@ -912,7 +909,6 @@
                         <option value="Processing">Processing</option>
                         <option value="Resolved">Resolved</option>
                         <option value="Rejected">Rejected</option>
-                        <option value="Delivered">Delivered</option>
                         <option value="Cancelled">Cancelled</option>
                     </select>
                 </div>
@@ -982,27 +978,27 @@
                 <div class="row g-3 mb-4">
                     <div class="col-sm-6">
                         <div class="detail-label">Issue Type</div>
-                        <div class="detail-value" id="detailIssueType">—</div>
+                        <div class="detail-value" id="detailIssueType">â€”</div>
                     </div>
                     <div class="col-sm-6">
                         <div class="detail-label">Date Submitted</div>
-                        <div class="detail-value" id="detailDate">—</div>
+                        <div class="detail-value" id="detailDate">â€”</div>
                     </div>
                     <div class="col-12">
                         <div class="detail-label">Description</div>
-                        <div class="detail-value" id="detailDescription" style="white-space:pre-wrap;">—</div>
+                        <div class="detail-value" id="detailDescription" style="white-space:pre-wrap;">â€”</div>
                     </div>
                     <div class="col-12">
                         <div class="detail-label">Complete Location</div>
-                        <div class="detail-value location-text" id="detailLocation">—</div>
+                        <div class="detail-value location-text" id="detailLocation">â€”</div>
                     </div>
                     <div class="col-6">
                         <div class="detail-label">Latitude</div>
-                        <div class="detail-value" id="detailLatitude">—</div>
+                        <div class="detail-value" id="detailLatitude">â€”</div>
                     </div>
                     <div class="col-6">
                         <div class="detail-label">Longitude</div>
-                        <div class="detail-value" id="detailLongitude">—</div>
+                        <div class="detail-value" id="detailLongitude">â€”</div>
                     </div>
                 </div>
 
@@ -1016,6 +1012,38 @@
 
                 <hr class="section-divider">
 
+                <!-- REPORT APPROVAL REVIEW -->
+                <div class="card border-warning mb-4" id="approvalReviewSection">
+                    <div class="card-body">
+                        <h3 class="h6 fw-bold mb-3">Report Approval Review</h3>
+
+                        <div class="mb-3">
+                            <span class="text-secondary small">Approval Status:</span>
+                            <span id="detailApprovalStatus" class="badge bg-warning text-dark">
+                                For Approval
+                            </span>
+                        </div>
+
+                        <p class="small text-secondary">
+                            <div id="detailRejectionReason" class="alert alert-danger d-none mt-3 mb-3">
+    <strong>Rejection Reason:</strong>
+    <div id="detailRejectionReasonText" class="mt-1"></div>
+</div>
+Review the submitted report before making it visible to the public.
+                        </p>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-success" id="approveReportButton">
+                                Approve Report
+                            </button>
+
+                            <button type="button" class="btn btn-danger" id="rejectApprovalButton">
+                                Reject Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mb-2">
                     <label for="detailStatus" class="form-label">Update Report Status</label>
                     <select id="detailStatus" class="form-select">
@@ -1023,9 +1051,32 @@
                         <option value="Processing">Processing</option>
                         <option value="Resolved">Resolved</option>
                         <option value="Rejected">Rejected</option>
-                        <option value="Delivered">Delivered</option>
                         <option value="Cancelled">Cancelled</option>
                     </select>
+                </div>
+                <div id="expectedAssistanceSection" class="mb-3 d-none">
+                    <label for="expectedAssistanceInput" class="form-label fw-semibold">
+                        Expected Assistance Date &amp; Time <span class="text-danger">*</span>
+                    </label>
+                    <input type="datetime-local" id="expectedAssistanceInput" class="form-control">
+                    <div class="form-text">
+                        Required when the report status is Processing.
+                    </div>
+                    <div id="expectedAssistanceMessage" class="small mt-2" role="status"></div>
+                </div>                <div id="resolutionPhotoSection" class="mb-3 d-none">
+                    <label for="resolutionPhotoInput" class="form-label fw-semibold">
+                        After Photo <span class="text-danger">*</span>
+                    </label>
+                    <input type="file" id="resolutionPhotoInput" class="form-control"
+                           accept="image/jpeg,image/png,image/webp">
+                    <div class="form-text">
+                        Required before marking this report as Resolved. Maximum file size: 5 MB.
+                    </div>
+                    <div id="resolutionPhotoMessage" class="small mt-2" role="status"></div>
+                    <img id="resolutionPhotoPreview"
+                         class="img-fluid rounded mt-2 d-none"
+                         alt="After Photo preview"
+                         style="max-height: 260px; object-fit: contain;">
                 </div>
                 <p class="small text-secondary mb-0">
                     <i class="fa-solid fa-lock me-1" aria-hidden="true"></i>
@@ -1045,10 +1096,45 @@
     </div>
 </div>
 
+<!-- REJECTION REASON MODAL -->
+<div class="modal fade" id="rejectReasonModal" tabindex="-1"
+     aria-labelledby="rejectReasonTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5 fw-bold" id="rejectReasonTitle">
+                    Reject Report
+                </h2>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary">
+                    Please provide a reason for rejecting this report.
+                    The resident will be able to see this reason.
+                </p>
+                <label for="rejectReasonInput" class="form-label fw-semibold">
+                    Rejection Reason <span class="text-danger">*</span>
+                </label>
+                <textarea id="rejectReasonInput" class="form-control"
+                          rows="4" maxlength="500" required
+                          placeholder="Explain why this report is being rejected..."></textarea>
+                <div id="rejectReasonMessage" class="small text-danger mt-2 d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger"
+                        id="confirmRejectButton">Confirm Rejection</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END REJECTION REASON MODAL -->
 <footer class="dashboard-footer text-center py-4 mt-4">
     <div class="container">
         <div class="fw-semibold mb-1">BantayBayan Community Reporting System</div>
-        <small>© 2026 BantayBayan. Official Administration Portal.</small>
+        <small>Â© 2026 BantayBayan. Official Administration Portal.</small>
     </div>
 </footer>
 

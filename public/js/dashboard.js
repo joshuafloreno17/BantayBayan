@@ -21,6 +21,84 @@ const reportsMessage = document.getElementById("reportsMessage");
 const reportsTableWrapper = document.getElementById("reportsTableWrapper");
 const reportsTableBody = document.getElementById("reportsTableBody");
 const reportCount = document.getElementById("reportCount");
+// Resident report photo viewer
+const reportPhotosModalElement = document.getElementById("reportPhotosModal");
+const reportPhotosModal = reportPhotosModalElement && window.bootstrap
+    ? new window.bootstrap.Modal(reportPhotosModalElement)
+    : null;
+
+function setResidentPhoto(imageId, emptyId, photoValue, emptyMessage) {
+    const image = document.getElementById(imageId);
+    const empty = document.getElementById(emptyId);
+
+    if (!image || !empty) return;
+
+    image.classList.add("d-none");
+    image.removeAttribute("src");
+    empty.classList.remove("d-none");
+    empty.textContent = emptyMessage;
+
+    if (
+        typeof photoValue !== "string" ||
+        !photoValue.trim() ||
+        !(/^https?:\/\//i.test(photoValue) || /^data:image\//i.test(photoValue))
+    ) {
+        return;
+    }
+
+    image.onload = () => {
+        image.classList.remove("d-none");
+        empty.classList.add("d-none");
+    };
+
+    image.onerror = () => {
+        image.classList.add("d-none");
+        empty.textContent = "Unable to load this photo.";
+        empty.classList.remove("d-none");
+    };
+
+    image.src = photoValue;
+}
+
+function openReportPhotos(report) {
+    if (!reportPhotosModal) {
+        console.error("Report Photos modal is unavailable.");
+        return;
+    }
+
+    const beforePhoto =
+        report.photoUrl ||
+        report.photoURL ||
+        report.photo ||
+        report.imageUrl ||
+        report.imageURL ||
+        report.image ||
+        report.photoBase64 ||
+        report.imageBase64 ||
+        "";
+
+    const afterPhoto =
+        report.resolutionPhoto ||
+        report.afterPhoto ||
+        report.resolvedPhoto ||
+        "";
+
+    setResidentPhoto(
+        "residentBeforePhoto",
+        "residentBeforePhotoEmpty",
+        beforePhoto,
+        "No Before Photo available."
+    );
+
+    setResidentPhoto(
+        "residentAfterPhoto",
+        "residentAfterPhotoEmpty",
+        afterPhoto,
+        "No After Photo uploaded yet."
+    );
+
+    reportPhotosModal.show();
+}
 
 let currentUser = null;
 let unsubscribeReports = null;
@@ -185,7 +263,7 @@ function formatDate(timestamp) {
 
 function addCell(row, value) {
     const cell = document.createElement("td");
-    cell.textContent = value || "—";
+    cell.textContent = value || "â€”";
     row.appendChild(cell);
     return cell;
 }
@@ -199,14 +277,14 @@ function updateReportCount(count) {
 
 function getReportLocation(report, isFlood) {
     if (isFlood) {
-        return report.purok || "—";
+        return report.purok || "â€”";
     }
 
     return [
         report.barangay,
         report.cityMunicipality,
         report.province
-    ].filter(Boolean).join(", ") || "—";
+    ].filter(Boolean).join(", ") || "â€”";
 }
 
 function normalizeIssueType(type) {
@@ -348,13 +426,59 @@ function renderReports() {
         addCell(row, formatDate(report.createdAt));
 
         const statusCell = document.createElement("td");
-        const statusBadge = document.createElement("span");
 
-        statusBadge.className = `badge ${getStatusClass(report.status)}`;
-        statusBadge.textContent = displayStatus(report.status);
+const approvalBadge = document.createElement("span");
+const approvalStatus = report.approvalStatus || "For Approval";
 
-        statusCell.appendChild(statusBadge);
-        row.appendChild(statusCell);
+approvalBadge.className =
+    approvalStatus === "Approved"
+        ? "badge bg-success d-block mb-1"
+        : approvalStatus === "Rejected"
+            ? "badge bg-danger d-block mb-1"
+            : "badge bg-warning text-dark d-block mb-1";
+
+approvalBadge.textContent = approvalStatus;
+statusCell.appendChild(approvalBadge);
+
+if (approvalStatus === "Rejected" && report.rejectionReason) {
+    const rejectionNote = document.createElement("div");
+    rejectionNote.className = "small text-danger mt-1 text-wrap";
+    rejectionNote.textContent = "Reason: " + report.rejectionReason;
+    statusCell.appendChild(rejectionNote);
+}
+
+const statusBadge = document.createElement("span");
+statusBadge.className = `badge ${getStatusClass(report.status)}`;
+statusBadge.textContent = displayStatus(report.status);
+
+statusCell.appendChild(statusBadge);
+row.appendChild(statusCell);
+
+        const expectedAssistanceCell = document.createElement("td");
+
+        if (report.status === "Processing") {
+            expectedAssistanceCell.textContent = report.expectedAssistanceAt
+                ? formatDate(report.expectedAssistanceAt)
+                : "Not scheduled yet";
+        } else {
+            expectedAssistanceCell.textContent = "—";
+        }
+
+        row.appendChild(expectedAssistanceCell);
+
+        const photosCell = document.createElement("td");
+        const photosButton = document.createElement("button");
+
+        photosButton.type = "button";
+        photosButton.className = "btn btn-sm btn-outline-primary";
+        photosButton.innerHTML = '<i class="fa-solid fa-images me-1" aria-hidden="true"></i> View Photos';
+
+        photosButton.addEventListener("click", () => {
+            openReportPhotos(report);
+        });
+
+        photosCell.appendChild(photosButton);
+        row.appendChild(photosCell);
 
         reportsTableBody.appendChild(row);
     });
@@ -494,6 +618,7 @@ onAuthStateChanged(auth, user => {
     }
 
     currentUser = user;
+
 
     residentName.textContent = user.displayName || "Resident";
     residentEmail.textContent =

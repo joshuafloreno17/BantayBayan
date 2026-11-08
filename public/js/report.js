@@ -1,4 +1,3 @@
-
 import { auth, db } from "./firebase-config.js";
 
 import {
@@ -578,6 +577,7 @@ reportForm?.addEventListener("submit", async (event) => {
             description,
 
             status: "Pending",
+            approvalStatus: "For Approval",
             createdAt: serverTimestamp(),
             photo: compressedPhoto,
             latitude,

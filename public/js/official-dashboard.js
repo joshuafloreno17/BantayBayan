@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase-config.js";
+﻿import { auth, db } from "./firebase-config.js";
 
 import {
     onAuthStateChanged,
@@ -9,7 +9,8 @@ import {
     collection,
     doc,
     updateDoc,
-    onSnapshot
+    onSnapshot,
+    Timestamp
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 
 // ==========================================
@@ -54,7 +55,6 @@ const ALLOWED_STATUSES = [
     "Processing",
     "Resolved",
     "Rejected",
-    "Delivered",
     "Cancelled"
 ];
 
@@ -93,6 +93,30 @@ const saveStatusButton = $("saveReportStatusButton");
 const detailStatus = $("detailStatus");
 const detailMessage = $("detailMessage");
 
+const expectedAssistanceSection = $("expectedAssistanceSection");
+const expectedAssistanceInput = $("expectedAssistanceInput");
+const expectedAssistanceMessage = $("expectedAssistanceMessage");
+
+const resolutionPhotoSection = $("resolutionPhotoSection");
+const resolutionPhotoInput = $("resolutionPhotoInput");
+const resolutionPhotoPreview = $("resolutionPhotoPreview");
+const resolutionPhotoMessage = $("resolutionPhotoMessage");
+
+const approveReportButton = $("approveReportButton");
+const rejectApprovalButton = $("rejectApprovalButton");
+const detailApprovalStatus = $("detailApprovalStatus");
+const detailRejectionReason = $("detailRejectionReason");
+const detailRejectionReasonText = $("detailRejectionReasonText");
+
+const rejectReasonModalElement = $("rejectReasonModal");
+const rejectReasonModal =
+    rejectReasonModalElement && window.bootstrap
+        ? new bootstrap.Modal(rejectReasonModalElement)
+        : null;
+
+const rejectionReasonInput = $("rejectReasonInput");
+const rejectReasonMessage = $("rejectReasonMessage");
+const confirmRejectButton = $("confirmRejectButton");
 const totalFloodReportsElement = $("totalFloodReports");
 const activeFloodWarningsElement = $("activeFloodWarnings");
 const latestFloodReportElement = $("latestFloodReport");
@@ -529,7 +553,7 @@ function updateSummary() {
     if (resolvedReports) {
         resolvedReports.textContent = String(
             combinedReports.filter(report =>
-                ["Resolved", "Delivered"].includes(report.status)
+                report.status === "Resolved"
             ).length
         );
     }
@@ -1233,11 +1257,43 @@ function openReportDetails(reportId, reportType = "resident") {
 
         setText(
             "detailFloodLevel",
-            isFlood ? getFloodLevel(report) : "—"
+            isFlood ? getFloodLevel(report) : "â€”"
         );
     }
 
     setPhoto(getPhotoValue(report));
+
+const approvalStatus = report.approvalStatus || "For Approval";
+
+if (detailApprovalStatus) {
+    detailApprovalStatus.textContent = approvalStatus;
+    detailApprovalStatus.className =
+        approvalStatus === "Approved"
+            ? "badge bg-success"
+            : approvalStatus === "Rejected"
+                ? "badge bg-danger"
+                : "badge bg-warning text-dark";
+}
+
+if (detailRejectionReason && detailRejectionReasonText) {
+    const reason = report.rejectionReason || "";
+
+    detailRejectionReasonText.textContent = reason;
+    detailRejectionReason.classList.toggle(
+        "d-none",
+        approvalStatus !== "Rejected" || !reason
+    );
+}
+const needsReview = approvalStatus === "For Approval";
+
+if (approveReportButton) {
+    approveReportButton.classList.toggle("d-none", !needsReview);
+}
+
+if (rejectApprovalButton) {
+    rejectApprovalButton.classList.toggle("d-none", !needsReview);
+}
+
 
     const statusWrapper = detailStatus?.closest(".mb-2");
     const statusNote = detailStatus?.parentElement?.nextElementSibling;
@@ -1255,6 +1311,57 @@ function openReportDetails(reportId, reportType = "resident") {
             ? report.status
             : "Pending";
     }
+
+    if (expectedAssistanceInput) {
+        expectedAssistanceInput.value =
+            toDatetimeLocalValue(report.expectedAssistanceAt);
+    }
+
+    updateExpectedAssistanceSection();
+
+    if (expectedAssistanceMessage) {
+        expectedAssistanceMessage.textContent = "";
+        expectedAssistanceMessage.className = "small mt-2";
+    }
+
+    // Reset the previous report's selected After Photo.
+    selectedResolutionPhoto = null;
+
+    if (resolutionPhotoPreviewUrl) {
+        URL.revokeObjectURL(resolutionPhotoPreviewUrl);
+        resolutionPhotoPreviewUrl = null;
+    }
+
+    if (resolutionPhotoInput) {
+        resolutionPhotoInput.value = "";
+    }
+
+    if (resolutionPhotoPreview) {
+        resolutionPhotoPreview.onload = null;
+        resolutionPhotoPreview.onerror = null;
+        resolutionPhotoPreview.classList.add("d-none");
+        resolutionPhotoPreview.removeAttribute("src");
+    }
+
+    const existingAfterPhoto = report.resolutionPhoto || "";
+
+    if (
+        typeof existingAfterPhoto === "string" &&
+        existingAfterPhoto.trim() &&
+        resolutionPhotoPreview
+    ) {
+        resolutionPhotoPreview.src = existingAfterPhoto;
+        resolutionPhotoPreview.classList.remove("d-none");
+    }
+
+    updateResolutionPhotoSection();
+
+    if (resolutionPhotoMessage && existingAfterPhoto) {
+        resolutionPhotoMessage.textContent =
+            "An After Photo is already saved. Upload a new one to replace it.";
+        resolutionPhotoMessage.className = "small mt-2 text-secondary";
+    }
+
 
     if (saveStatusButton) {
         saveStatusButton.classList.remove("d-none");
@@ -1310,7 +1417,7 @@ if (detailModalElement) {
 
             const markerTitle =
                 selectedReportType === "flood"
-                    ? `Flood Report — ${getFloodLevel(selectedReport)}`
+                    ? `Flood Report â€” ${getFloodLevel(selectedReport)}`
                     : formatIssue(getReportType(selectedReport));
 
             detailMarker = L.marker(position)
@@ -1330,64 +1437,166 @@ if (detailModalElement) {
 // UPDATE REPORT STATUS
 // ==========================================
 
-if (saveStatusButton) {
-    saveStatusButton.addEventListener("click", async () => {
-        if (!currentUser || currentUser.uid !== OFFICIAL_UID) {
-            showDetailMessage(
-                "Wala kang pahintulot na mag-update ng report."
+// ==========================================
+// REPORT APPROVAL ACTIONS
+// ==========================================
+
+async function updateReportApproval(newApprovalStatus, rejectionReason = "") {
+    if (!currentUser || currentUser.uid !== OFFICIAL_UID) {
+        if (detailRejectionReason && detailRejectionReasonText) {
+            const reason = selectedReport.rejectionReason || "";
+
+            detailRejectionReasonText.textContent = reason;
+            detailRejectionReason.classList.toggle(
+                "d-none",
+                newApprovalStatus !== "Rejected" || !reason
             );
-            return;
+        }
+        showDetailMessage("Wala kang pahintulot na mag-review ng report.");
+        return false;
+    }
+
+    if (!selectedReport) {
+        showDetailMessage("Walang napiling report.");
+        return false;
+    }
+
+    const collectionName =
+        selectedReportType === "flood"
+            ? "floodReports"
+            : "reports";
+
+    const actionButton =
+        newApprovalStatus === "Approved"
+            ? approveReportButton
+            : confirmRejectButton;
+
+    if (actionButton) {
+        actionButton.disabled = true;
+    }
+
+    try {
+        const updateData = {
+            approvalStatus: newApprovalStatus
+        };
+
+        if (newApprovalStatus === "Rejected") {
+            updateData.rejectionReason = rejectionReason.trim();
         }
 
-        if (!selectedReport) {
-            showDetailMessage("Walang napiling report.");
-            return;
+        await updateDoc(
+            doc(db, collectionName, selectedReport.id),
+            updateData
+        );
+
+        selectedReport.approvalStatus = newApprovalStatus;
+
+        if (newApprovalStatus === "Rejected") {
+            selectedReport.rejectionReason = rejectionReason.trim();
         }
 
-        const newStatus = detailStatus?.value;
-
-        if (!ALLOWED_STATUSES.includes(newStatus)) {
-            showDetailMessage("Hindi valid ang napiling status.");
-            return;
+        if (approveReportButton) {
+            approveReportButton.classList.add("d-none");
         }
 
-        const collectionName =
-            selectedReportType === "flood"
-                ? "floodReports"
-                : "reports";
+        if (rejectApprovalButton) {
+            rejectApprovalButton.classList.add("d-none");
+        }
 
-        saveStatusButton.disabled = true;
-        saveStatusButton.textContent = "Saving...";
+        if (detailApprovalStatus) {
+            detailApprovalStatus.textContent = newApprovalStatus;
+            detailApprovalStatus.className =
+                newApprovalStatus === "Approved"
+                    ? "badge bg-success"
+                    : "badge bg-danger";
+        }
 
-        try {
-            await updateDoc(
-                doc(db, collectionName, selectedReport.id),
-                { status: newStatus }
-            );
+        showDetailMessage(
+            newApprovalStatus === "Approved"
+                ? "Matagumpay na na-approve ang report."
+                : "Matagumpay na na-reject ang report.",
+            "success"
+        );
 
-            selectedReport.status = newStatus;
+        showStatusToast();
+        return true;
 
-            showDetailMessage(
-                "Matagumpay na na-update ang report status.",
-                "success"
-            );
+    } catch (error) {
+        console.error("Report approval error:", error);
 
-            showStatusToast();
+        showDetailMessage(
+            "Hindi na-update ang approval. Pakisuri ang Firestore Rules at connection."
+        );
 
-        } catch (error) {
-            console.error("Status update error:", error);
+        return false;
 
-            showDetailMessage(
-                "Hindi na-update ang status. Pakisuri ang Firestore Rules at connection."
-            );
-        } finally {
-            saveStatusButton.disabled = false;
-            saveStatusButton.textContent = "Save Status";
+    } finally {
+        if (approveReportButton) {
+            approveReportButton.disabled = false;
+        }
+
+        if (confirmRejectButton) {
+            confirmRejectButton.disabled = false;
+        }
+    }
+}
+
+if (approveReportButton) {
+    approveReportButton.addEventListener("click", () => {
+        updateReportApproval("Approved");
+    });
+}
+
+if (rejectApprovalButton) {
+    rejectApprovalButton.addEventListener("click", () => {
+        if (rejectionReasonInput) {
+            rejectionReasonInput.value = "";
+        }
+
+        if (rejectReasonMessage) {
+            rejectReasonMessage.textContent = "";
+            rejectReasonMessage.classList.add("d-none");
+        }
+
+        if (rejectReasonModal) {
+            rejectReasonModal.show();
+        } else {
+            showDetailMessage("Hindi mabuksan ang rejection reason modal.");
         }
     });
 }
 
-// ==========================================
+if (confirmRejectButton) {
+    confirmRejectButton.addEventListener("click", async () => {
+        const reason = rejectionReasonInput
+            ? rejectionReasonInput.value.trim()
+            : "";
+
+        if (!reason || reason.length < 5) {
+            if (rejectReasonMessage) {
+                rejectReasonMessage.textContent =
+                    "Maglagay ng rejection reason na hindi bababa sa 5 characters.";
+                rejectReasonMessage.classList.remove("d-none");
+            }
+            return;
+        }
+
+        if (reason.length > 500) {
+            if (rejectReasonMessage) {
+                rejectReasonMessage.textContent =
+                    "Maximum na 500 characters lamang ang rejection reason.";
+                rejectReasonMessage.classList.remove("d-none");
+            }
+            return;
+        }
+
+        const success = await updateReportApproval("Rejected", reason);
+
+        if (success && rejectReasonModal) {
+            rejectReasonModal.hide();
+        }
+    });
+}
 // FLOOD WARNING LOGIC
 // ==========================================
 
@@ -1463,7 +1672,7 @@ function renderFloodAlerts() {
 
         const heading = document.createElement("h4");
         heading.className = "h6 fw-bold";
-        heading.textContent = `FLOOD WARNING — ${warning.purok}`;
+        heading.textContent = `FLOOD WARNING â€” ${warning.purok}`;
 
         const count = document.createElement("p");
         count.className = "mb-1";
@@ -1530,7 +1739,7 @@ function renderFloodReports() {
     if (latest) {
         if (latestFloodReportElement) {
             latestFloodReportElement.textContent =
-                `${latest.purok || "Unknown Purok"} · ${getFloodLevel(latest)}`;
+                `${latest.purok || "Unknown Purok"} Â· ${getFloodLevel(latest)}`;
         }
 
         if (latestFloodReportTimeElement) {
@@ -1544,7 +1753,7 @@ function renderFloodReports() {
         }
 
         if (latestFloodReportTimeElement) {
-            latestFloodReportTimeElement.textContent = "—";
+            latestFloodReportTimeElement.textContent = "â€”";
         }
     }
 
@@ -1671,7 +1880,7 @@ function handleFloodReportsSnapshot(snapshot) {
 updateSummary();
 
     if (floodLiveStatus) {
-        floodLiveStatus.textContent = "● Live";
+        floodLiveStatus.textContent = "â— Live";
         floodLiveStatus.className = "badge bg-success fs-6";
     }
 
@@ -1803,6 +2012,318 @@ if (logoutButton) {
 }
 
 // ==========================================
+// ==========================================
+// RESOLUTION PHOTO PREVIEW
+// ==========================================
+
+let selectedResolutionPhoto = null;
+let resolutionPhotoPreviewUrl = null;
+
+function toDatetimeLocalValue(value) {
+    if (!value) return "";
+
+    const date = typeof value.toDate === "function"
+        ? value.toDate()
+        : new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "";
+
+    const pad = number => String(number).padStart(2, "0");
+
+    return (
+        date.getFullYear() + "-" +
+        pad(date.getMonth() + 1) + "-" +
+        pad(date.getDate()) + "T" +
+        pad(date.getHours()) + ":" +
+        pad(date.getMinutes())
+    );
+}
+
+function updateExpectedAssistanceSection() {
+    if (!expectedAssistanceSection || !detailStatus) return;
+
+    expectedAssistanceSection.classList.toggle(
+        "d-none",
+        detailStatus.value !== "Processing"
+    );
+}
+
+function updateResolutionPhotoSection() {
+    if (!resolutionPhotoSection || !detailStatus) return;
+
+    const isResolved = detailStatus.value === "Resolved";
+
+    resolutionPhotoSection.classList.toggle("d-none", !isResolved);
+}
+
+if (detailStatus) {
+    detailStatus.addEventListener("change", updateResolutionPhotoSection);
+    detailStatus.addEventListener("change", updateExpectedAssistanceSection);
+}
+
+if (resolutionPhotoInput) {
+    resolutionPhotoInput.addEventListener("change", () => {
+        const file = resolutionPhotoInput.files?.[0] || null;
+
+        selectedResolutionPhoto = null;
+
+        if (resolutionPhotoPreviewUrl) {
+            URL.revokeObjectURL(resolutionPhotoPreviewUrl);
+            resolutionPhotoPreviewUrl = null;
+        }
+
+        if (resolutionPhotoPreview) {
+            resolutionPhotoPreview.classList.add("d-none");
+            resolutionPhotoPreview.removeAttribute("src");
+        }
+
+        if (!file) return;
+
+        if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+            resolutionPhotoMessage.textContent =
+                "Please select a JPG, PNG, or WebP image.";
+            resolutionPhotoMessage.className = "small mt-2 text-danger";
+            resolutionPhotoInput.value = "";
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            resolutionPhotoMessage.textContent =
+                "Image must not exceed 5 MB.";
+            resolutionPhotoMessage.className = "small mt-2 text-danger";
+            resolutionPhotoInput.value = "";
+            return;
+        }
+
+        selectedResolutionPhoto = file;
+        resolutionPhotoPreviewUrl = URL.createObjectURL(file);
+
+        if (resolutionPhotoPreview) {
+            resolutionPhotoPreview.src = resolutionPhotoPreviewUrl;
+            resolutionPhotoPreview.classList.remove("d-none");
+        }
+
+        resolutionPhotoMessage.textContent =
+            "After Photo selected. It will be compressed before saving.";
+        resolutionPhotoMessage.className = "small mt-2 text-success";
+    });
+}
+
+// ==========================================
+
+// ==========================================
+// AFTER PHOTO COMPRESSION AND STATUS SAVE
+// ==========================================
+
+async function compressResolutionPhoto(file) {
+    const objectUrl = URL.createObjectURL(file);
+
+    try {
+        const image = new Image();
+
+        await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = () => reject(
+                new Error("Unable to read the selected image.")
+            );
+            image.src = objectUrl;
+        });
+
+        const maxDimension = 900;
+        const scale = Math.min(
+            1,
+            maxDimension / Math.max(image.width, image.height)
+        );
+
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+
+        const context = canvas.getContext("2d");
+
+        if (!context) {
+            throw new Error("Image compression is unavailable.");
+        }
+
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        const qualities = [0.65, 0.55, 0.45, 0.35];
+
+        for (const quality of qualities) {
+            const dataUrl = canvas.toDataURL("image/jpeg", quality);
+
+            const candidate = {
+                ...selectedReport,
+                status: "Resolved",
+                resolutionPhoto: dataUrl
+            };
+
+            const documentSize = new TextEncoder().encode(
+                JSON.stringify(candidate)
+            ).length;
+
+            if (documentSize <= 900 * 1024) {
+                return dataUrl;
+            }
+        }
+
+        throw new Error(
+            "After Photo is too large even after compression. Please select a smaller image."
+        );
+    } finally {
+        URL.revokeObjectURL(objectUrl);
+    }
+}
+
+if (saveStatusButton) {
+    saveStatusButton.addEventListener("click", async () => {
+        if (!currentUser || currentUser.uid !== OFFICIAL_UID) {
+            showDetailMessage("Unauthorized account.", "danger");
+            return;
+        }
+
+        if (!selectedReport || !detailStatus) {
+            showDetailMessage("No report is currently selected.", "danger");
+            return;
+        }
+
+        const newStatus = detailStatus.value;
+
+        if (!ALLOWED_STATUSES.includes(newStatus)) {
+            showDetailMessage("Invalid report status.", "danger");
+            return;
+        }
+
+        if (
+            newStatus === "Resolved" &&
+            !selectedResolutionPhoto &&
+            !selectedReport.resolutionPhoto
+        ) {
+            showDetailMessage(
+                "Please upload an After Photo before marking this report as Resolved.",
+                "danger"
+            );
+            return;
+        }
+
+        let expectedAssistanceDate = null;
+
+        if (newStatus === "Processing") {
+            const expectedValue = expectedAssistanceInput?.value || "";
+
+            if (!expectedValue) {
+                showDetailMessage(
+                    "Please set the Expected Assistance Date & Time.",
+                    "danger"
+                );
+                expectedAssistanceInput?.focus();
+                return;
+            }
+
+            expectedAssistanceDate = new Date(expectedValue);
+
+            if (Number.isNaN(expectedAssistanceDate.getTime())) {
+                showDetailMessage(
+                    "Please enter a valid Expected Assistance Date & Time.",
+                    "danger"
+                );
+                return;
+            }
+        }
+
+        const collectionName =
+            selectedReportType === "flood"
+                ? "floodReports"
+                : "reports";
+
+        const updateData = {
+            status: newStatus
+        };
+
+        if (newStatus === "Processing") {
+            updateData.expectedAssistanceAt =
+                Timestamp.fromDate(expectedAssistanceDate);
+        }
+
+        saveStatusButton.disabled = true;
+        saveStatusButton.textContent = "Saving...";
+
+        try {
+            if (newStatus === "Resolved" && selectedResolutionPhoto) {
+                if (resolutionPhotoMessage) {
+                    resolutionPhotoMessage.textContent =
+                        "Compressing After Photo...";
+                    resolutionPhotoMessage.className =
+                        "small mt-2 text-secondary";
+                }
+
+                const compressedPhoto = await compressResolutionPhoto(
+                    selectedResolutionPhoto
+                );
+
+                updateData.resolutionPhoto = compressedPhoto;
+            }
+
+            await updateDoc(
+                doc(db, collectionName, selectedReport.id),
+                updateData
+            );
+
+            // Update local data only after Firestore confirms success.
+            selectedReport.status = newStatus;
+
+            if (updateData.expectedAssistanceAt) {
+                selectedReport.expectedAssistanceAt =
+                    updateData.expectedAssistanceAt;
+            }
+
+            if (updateData.resolutionPhoto) {
+                selectedReport.resolutionPhoto =
+                    updateData.resolutionPhoto;
+
+                selectedResolutionPhoto = null;
+
+                if (resolutionPhotoInput) {
+                    resolutionPhotoInput.value = "";
+                }
+
+                if (resolutionPhotoPreviewUrl) {
+                    URL.revokeObjectURL(resolutionPhotoPreviewUrl);
+                    resolutionPhotoPreviewUrl = null;
+                }
+
+                if (resolutionPhotoPreview) {
+                    resolutionPhotoPreview.src =
+                        updateData.resolutionPhoto;
+                    resolutionPhotoPreview.classList.remove("d-none");
+                }
+            }
+
+            if (resolutionPhotoMessage && newStatus === "Resolved") {
+                resolutionPhotoMessage.textContent =
+                    "After Photo is saved successfully.";
+                resolutionPhotoMessage.className =
+                    "small mt-2 text-success";
+            }
+
+            showDetailMessage(
+                "Report status saved successfully.",
+                "success"
+            );
+        } catch (error) {
+            console.error("Failed to save report status:", error);
+
+            showDetailMessage(
+                "Unable to save report status. " +
+                (error.message || "Please try again."),
+                "danger"
+            );
+        } finally {
+            saveStatusButton.disabled = false;
+            saveStatusButton.textContent = "Save Status";
+        }
+    });
+}
 // OFFICIAL AUTHENTICATION
 // ==========================================
 

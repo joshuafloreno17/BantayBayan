@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -443,6 +443,8 @@
                             <th>Purok / Barangay</th>
                             <th>Date Submitted</th>
                             <th>Status</th>
+                            <th>Expected Assistance</th>
+                            <th>Photos</th>
                         </tr>
                     </thead>
 
@@ -476,6 +478,52 @@
     </div>
 </footer>
 
+<!-- REPORT PHOTOS MODAL -->
+<div class="modal fade" id="reportPhotosModal" tabindex="-1"
+     aria-labelledby="reportPhotosModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="reportPhotosModalTitle">
+                    Report Photos
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-2">Before Photo</h6>
+                        <div id="residentBeforePhotoEmpty"
+                             class="alert alert-secondary mb-0">
+                            No Before Photo available.
+                        </div>
+                        <img id="residentBeforePhoto"
+                             class="img-fluid rounded d-none"
+                             alt="Before Photo">
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-2">After Photo</h6>
+                        <div id="residentAfterPhotoEmpty"
+                             class="alert alert-secondary mb-0">
+                            No After Photo uploaded yet.
+                        </div>
+                        <img id="residentAfterPhoto"
+                             class="img-fluid rounded d-none"
+                             alt="After Photo">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/dashboard.js" type="module"></script>
 

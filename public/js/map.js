@@ -1,8 +1,11 @@
 
 import { db } from "./firebase-config.js";
+
 import {
     collection,
-    onSnapshot
+    onSnapshot,
+    query,
+    where
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 
 const mapElement = document.getElementById("map");
@@ -21,20 +24,29 @@ if (mapElement && typeof L !== "undefined") {
 
     function markerColor(status) {
         if (status === "Resolved") return "#198754";
-        if (status === "In Progress") return "#fd7e14";
+        if (status === "Processing") return "#fd7e14";
         return "#dc3545";
     }
 
-    onSnapshot(
+    const approvedReportsQuery = query(
         collection(db, "reports"),
-        snapshot => {
+        where("approvalStatus", "==", "Approved")
+    );
+
+    onSnapshot(
+        approvedReportsQuery,
+        (snapshot) => {
             reportMarkers.clearLayers();
 
-            snapshot.forEach(reportDoc => {
+            snapshot.forEach((reportDoc) => {
                 const report = reportDoc.data();
 
+                // Show approved reports only.
+                if (report.approvalStatus !== "Approved") {
+                    return;
+                }
+
                 // A marker requires real coordinates saved with the report.
-                // Do not invent a location from the purok name alone.
                 if (
                     typeof report.latitude !== "number" ||
                     typeof report.longitude !== "number" ||
@@ -59,21 +71,24 @@ if (mapElement && typeof L !== "undefined") {
                 );
 
                 const popup = document.createElement("div");
+
                 const title = document.createElement("strong");
                 title.textContent = report.type || "Community issue";
 
                 const details = document.createElement("p");
-                details.textContent = `${report.purok || "Unknown purok"} — ${report.status || "Pending"}`;
+                details.textContent =
+                    `${report.purok || "Unknown purok"} — ${report.status || "Pending"}`;
 
                 const description = document.createElement("p");
                 description.textContent = report.description || "";
 
                 popup.append(title, details, description);
+
                 marker.bindPopup(popup);
                 marker.addTo(reportMarkers);
             });
         },
-        error => {
+        (error) => {
             console.error("Map reports error:", error);
         }
     );
