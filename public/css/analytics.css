@@ -1,0 +1,151 @@
+.analytics-section {
+    margin-bottom: 1.5rem;
+}
+
+.analytics-section .section-body {
+    padding: 1.5rem;
+}
+
+.analytics-kpi {
+    height: 100%;
+    min-height: 112px;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+}
+
+.analytics-kpi-label {
+    color: #64748b;
+    font-size: .82rem;
+    font-weight: 600;
+}
+
+.analytics-kpi-value {
+    margin-top: .35rem;
+    color: #172554;
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.analytics-kpi-caption {
+    margin-top: .3rem;
+    color: #64748b;
+    font-size: .75rem;
+}
+
+.analytics-panel {
+    height: 100%;
+    padding: 1.25rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+}
+
+.analytics-panel-title {
+    margin-bottom: 1rem;
+    color: #172554;
+    font-size: 1rem;
+    font-weight: 750;
+}
+
+.analytics-bar-row {
+    margin-bottom: 1rem;
+}
+
+.analytics-bar-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .4rem;
+    font-size: .84rem;
+}
+
+.analytics-bar-label {
+    color: #334155;
+    font-weight: 600;
+}
+
+.analytics-bar-value {
+    color: #172554;
+    font-variant-numeric: tabular-nums;
+}
+
+.analytics-bar-track {
+    height: 9px;
+    overflow: hidden;
+    background: #e9eef5;
+    border-radius: 20px;
+}
+
+.analytics-bar-fill {
+    height: 100%;
+    background: #2563eb;
+    border-radius: 20px;
+    transition: width .25s ease;
+}
+
+.analytics-empty {
+    padding: 1rem 0;
+    color: #64748b;
+    font-size: .88rem;
+    text-align: center;
+}
+
+.analytics-activity-item {
+    display: flex;
+    gap: .85rem;
+    padding: .9rem 0;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.analytics-activity-item:last-child {
+    border-bottom: 0;
+}
+
+.analytics-activity-marker {
+    flex: 0 0 9px;
+    width: 9px;
+    height: 9px;
+    margin-top: .35rem;
+    background: #2563eb;
+    border-radius: 50%;
+}
+
+.analytics-activity-content {
+    min-width: 0;
+    font-size: .88rem;
+}
+
+.analytics-activity-content strong {
+    display: block;
+    color: #1e293b;
+}
+
+.analytics-activity-detail {
+    margin-top: .2rem;
+    color: #64748b;
+    overflow-wrap: anywhere;
+}
+
+.analytics-activity-date {
+    display: block;
+    margin-top: .25rem;
+    color: #94a3b8;
+    font-size: .75rem;
+}
+
+#analyticsDateFilter {
+    min-width: 145px;
+}
+
+@media (max-width: 576px) {
+    .analytics-section .section-body {
+        padding: 1rem;
+    }
+
+    .analytics-kpi-value {
+        font-size: 1.55rem;
+    }
+}

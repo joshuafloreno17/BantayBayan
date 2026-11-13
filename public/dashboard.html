@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -260,6 +260,8 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="css/announcements.css">
+    <link rel="stylesheet" href="css/emergency-response.css">
 </head>
 
 <body>
@@ -307,6 +309,51 @@
                     </a>
                 </li>
 
+                <li class="nav-item">
+                    <a class="nav-link" href="#residentEmergencyResponse">
+                        <i class="fa-solid fa-kit-medical me-1" aria-hidden="true"></i>
+                        Emergency Response
+                    </a>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <button
+                        class="btn btn-outline-light btn-sm position-relative"
+                        id="notificationBell"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        aria-label="Notifications">
+                        <i class="fa-solid fa-bell" aria-hidden="true"></i>
+                        <span
+                            id="notificationBadge"
+                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                            0
+                        </span>
+                    </button>
+
+                    <div
+                        class="dropdown-menu dropdown-menu-end p-0 shadow"
+                        id="notificationPanel"
+                        style="width: 350px; max-width: 90vw;">
+
+                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                            <strong id="notificationTitle">Notifications</strong>
+                            <button
+                                type="button"
+                                class="btn btn-link btn-sm text-decoration-none p-0"
+                                id="notificationMarkAllButton">
+                                Mark all as read
+                            </button>
+                        </div>
+
+                        <div
+                            id="notificationList"
+                            class="list-group list-group-flush"
+                            style="max-height: 350px; overflow-y: auto;">
+                        </div>
+                    </div>
+                </li>
                 <li class="nav-item ms-lg-2">
                     <button class="btn btn-outline-light btn-sm px-3"
                             id="logoutButton" type="button">
@@ -405,7 +452,160 @@
 
     </section>
 
-    <!-- My Reports -->
+        <!-- EMERGENCY ANNOUNCEMENTS -->
+    <section id="residentAnnouncements" class="card section-card announcement-section mb-4">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                <div>
+                    <div class="section-label">COMMUNITY SAFETY</div>
+                    <h2 class="h4 fw-bold section-heading mb-1">
+                        <i class="fa-solid fa-bullhorn me-2" aria-hidden="true"></i>
+                        Emergency Announcements
+                    </h2>
+                    <p class="text-secondary mb-0">
+                        Official advisories and important community updates.
+                    </p>
+                </div>
+                <span id="residentAnnouncementCount" class="badge text-bg-primary">0 announcements</span>
+            </div>
+
+            <div id="residentAnnouncementsMessage" class="alert alert-info" role="status">
+                Loading announcements...
+            </div>
+            <div id="residentAnnouncementsList" class="announcement-list"></div>
+        </div>
+    </section>
+    <!-- END EMERGENCY ANNOUNCEMENTS -->
+<!-- EMERGENCY RESPONSE -->
+<section id="residentEmergencyResponse" class="emergency-response-section card mb-4">
+    <div class="card-body p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div>
+                <div class="section-label">SANTA CRUZ, LAGUNA</div>
+                <h2 class="h4 fw-bold mb-1">
+                    <i class="fa-solid fa-kit-medical me-2 text-danger" aria-hidden="true"></i>
+                    Emergency Response
+                </h2>
+                <p class="text-secondary mb-0">
+                    Emergency hotlines, evacuation information, and safety reminders.
+                </p>
+            </div>
+            <span class="badge text-bg-danger">Emergency Information</span>
+        </div>
+
+        <div class="alert alert-warning" role="alert">
+            <strong>Important:</strong>
+            In an emergency, contact the appropriate response team immediately.
+            Follow official instructions from the MDRRMO and local authorities.
+        </div>
+
+        <h3 class="h5 fw-bold mb-3">Emergency Hotline Directory</h3>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="emergency-contact-card h-100">
+                    <div class="emergency-contact-icon text-danger">
+                        <i class="fa-solid fa-house-flood-water" aria-hidden="true"></i>
+                    </div>
+                    <h4 class="h6 fw-bold">MDRRMO</h4>
+                    <p class="small text-secondary">Disaster and emergency response</p>
+                    <a href="tel:09169049459">0916-904-9459</a>
+                    <a href="tel:0495233780">(049) 523-3780</a>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="emergency-contact-card h-100">
+                    <div class="emergency-contact-icon text-primary">
+                        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                    </div>
+                    <h4 class="h6 fw-bold">PNP Santa Cruz</h4>
+                    <p class="small text-secondary">Police assistance</p>
+                    <a href="tel:09985985646">0998-598-5646</a>
+                    <a href="tel:09676304240">0967-630-4240</a>
+                    <a href="tel:0495231815">(049) 523-1815</a>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="emergency-contact-card h-100">
+                    <div class="emergency-contact-icon text-warning">
+                        <i class="fa-solid fa-fire-extinguisher" aria-hidden="true"></i>
+                    </div>
+                    <h4 class="h6 fw-bold">BFP Santa Cruz</h4>
+                    <p class="small text-secondary">Fire and rescue assistance</p>
+                    <a href="tel:09107661443">0910-766-1443</a>
+                    <a href="tel:0495233752">(049) 523-3752</a>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="h5 fw-bold mb-3">Evacuation Center Directory</h3>
+
+        <div class="emergency-center-card mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                <div>
+                    <h4 class="h6 fw-bold mb-1">Pilot Evacuation Center</h4>
+                    <p class="text-secondary mb-1">
+                        Barangay Duhat, Santa Cruz, Laguna
+                    </p>
+                    <span class="badge text-bg-secondary">Location identified</span>
+                </div>
+                <i class="fa-solid fa-location-dot text-danger fs-3" aria-hidden="true"></i>
+            </div>
+            <p class="small text-secondary mt-3 mb-0">
+                Confirm availability, accessibility, and evacuation instructions
+                with the MDRRMO before proceeding. Capacity and current operating
+                status have not yet been verified.
+            </p>
+        </div>
+
+        <h3 class="h5 fw-bold mb-3">Flood and Evacuation Safety Guide</h3>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="emergency-guide-card h-100">
+                    <h4 class="h6 fw-bold">
+                        <i class="fa-solid fa-water text-primary me-2" aria-hidden="true"></i>
+                        During Flooding
+                    </h4>
+                    <ul class="mb-0">
+                        <li>Move to higher and safer ground when instructed.</li>
+                        <li>Never walk or drive through moving floodwater.</li>
+                        <li>Stay away from electrical wires and flooded outlets.</li>
+                        <li>Bring essential medicines and emergency supplies.</li>
+                        <li>Monitor official announcements and flood warnings.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="emergency-guide-card h-100">
+                    <h4 class="h6 fw-bold">
+                        <i class="fa-solid fa-person-walking-arrow-right text-success me-2" aria-hidden="true"></i>
+                        During Evacuation
+                    </h4>
+                    <ul class="mb-0">
+                        <li>Follow instructions from authorized responders.</li>
+                        <li>Bring identification and important documents.</li>
+                        <li>Prepare water, food, medicine, and a flashlight.</li>
+                        <li>Assist children, older persons, and persons with disabilities.</li>
+                        <li>Do not return home until authorities declare it safe.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <p class="small text-secondary mt-3 mb-0">
+            Emergency contact information is based on the Santa Cruz government
+            portal. Contact details and evacuation arrangements should be
+            reconfirmed with the municipality.
+        </p>
+    </div>
+</section>
+<!-- END EMERGENCY RESPONSE -->
+
+<!-- My Reports -->
     <section class="card section-card">
         <div class="card-body p-3 p-md-4">
 
@@ -445,6 +645,7 @@
                             <th>Status</th>
                             <th>Expected Assistance</th>
                             <th>Photos</th>
+                            <th>Activity</th>
                         </tr>
                     </thead>
 
@@ -524,8 +725,33 @@
         </div>
     </div>
 </div>
+<!-- REPORT ACTIVITY MODAL -->
+<div class="modal fade" id="reportActivityModal" tabindex="-1"
+     aria-labelledby="reportActivityModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="reportActivityModalTitle">
+                    Report Activity
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="reportActivitySubtitle" class="small text-secondary mb-4"></p>
+                <div id="reportActivityTimeline"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/dashboard.js" type="module"></script>
+<script type="module" src="js/resident-announcements.js"></script>
 
 <script>
     // Keep the profile name synchronized with the dashboard greeting.

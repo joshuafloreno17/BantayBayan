@@ -1,0 +1,48 @@
+.emergency-response-section {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+}
+
+.emergency-contact-card,
+.emergency-center-card,
+.emergency-guide-card {
+    height: 100%;
+    padding: 18px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.emergency-contact-icon {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+}
+
+.emergency-contact-card a {
+    display: block;
+    width: fit-content;
+    margin-top: 6px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.emergency-contact-card a:hover {
+    text-decoration: underline;
+}
+
+.emergency-guide-card ul {
+    padding-left: 1.2rem;
+}
+
+.emergency-guide-card li {
+    margin-bottom: 8px;
+}
+
+.emergency-guide-card li:last-child {
+    margin-bottom: 0;
+}
+
+.emergency-center-card {
+    background: #f8fafc;
+}

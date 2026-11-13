@@ -533,6 +533,9 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="css/announcements.css">
+    <link rel="stylesheet" href="css/analytics.css">
+    <link rel="stylesheet" href="css/emergency-response.css">
 </head>
 
 <body>
@@ -571,7 +574,18 @@
                         <i class="fa-solid fa-file-lines me-1" aria-hidden="true"></i> Reports
                     </a>
                 </li>
-                <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                <li class="nav-item">
+    <a class="nav-link" href="#officialEmergencyResponse">
+        <i class="fa-solid fa-kit-medical me-1" aria-hidden="true"></i>
+        Emergency Response
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="#officialAuditLogs">
+        <i class="fa-solid fa-clipboard-list me-1" aria-hidden="true"></i>
+        Audit Logs
+    </a>
+</li><li class="nav-item ms-lg-2 mt-2 mt-lg-0">
                     <button class="btn btn-outline-light btn-sm px-3" id="officialLogoutButton" type="button">
                         <i class="fa-solid fa-right-from-bracket me-1" aria-hidden="true"></i> Logout
                     </button>
@@ -678,7 +692,125 @@
         </div>
     </section>
 
-    <!-- COMMUNITY REPORT MAP -->
+        <!-- ANALYTICS DASHBOARD -->
+    <section id="analyticsDashboard" class="card section-card analytics-section">
+        <div class="section-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                <div>
+                    <h2 class="section-title mb-1">Analytics Dashboard</h2>
+                    <p class="section-description mb-0">
+                        Community reporting statistics and activity overview.
+                    </p>
+                </div>
+
+                <div>
+                    <label for="analyticsDateFilter" class="form-label small fw-semibold mb-1">
+                        Reporting Period
+                    </label>
+                    <select id="analyticsDateFilter" class="form-select">
+                        <option value="daily">Today</option>
+                        <option value="weekly">Last 7 Days</option>
+                        <option value="monthly">This Month</option>
+                        <option value="all" selected>All Time</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="analyticsMessage" class="alert alert-info d-none" role="status"></div>
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <h3 class="h6 fw-bold mb-0">Report Overview</h3>
+                <small id="analyticsLastUpdated" class="text-muted">Waiting for report data...</small>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-lg-4">
+                    <div class="analytics-kpi">
+                        <div class="analytics-kpi-label">Total Reports</div>
+                        <div class="analytics-kpi-value" id="analyticsTotalReports">0</div>
+                        <div class="analytics-kpi-caption">Resident and flood reports</div>
+                    </div>
+                </div>
+
+                <div class="col-6 col-lg-4">
+                    <div class="analytics-kpi">
+                        <div class="analytics-kpi-label">For Approval</div>
+                        <div class="analytics-kpi-value" id="analyticsForApproval">0</div>
+                        <div class="analytics-kpi-caption">Awaiting official review</div>
+                    </div>
+                </div>
+
+                <div class="col-6 col-lg-4">
+                    <div class="analytics-kpi">
+                        <div class="analytics-kpi-label">Approved</div>
+                        <div class="analytics-kpi-value" id="analyticsApproved">0</div>
+                        <div class="analytics-kpi-caption">Approved submissions</div>
+                    </div>
+                </div>
+
+                <div class="col-6 col-lg-4">
+                    <div class="analytics-kpi">
+                        <div class="analytics-kpi-label">Rejected</div>
+                        <div class="analytics-kpi-value" id="analyticsRejected">0</div>
+                        <div class="analytics-kpi-caption">Rejected submissions</div>
+                    </div>
+                </div>
+
+                <div class="col-6 col-lg-4">
+                    <div class="analytics-kpi">
+                        <div class="analytics-kpi-label">Processing</div>
+                        <div class="analytics-kpi-value" id="analyticsProcessing">0</div>
+                        <div class="analytics-kpi-caption">Currently being addressed</div>
+                    </div>
+                </div>
+
+                <div class="col-6 col-lg-4">
+                    <div class="analytics-kpi">
+                        <div class="analytics-kpi-label">Resolved</div>
+                        <div class="analytics-kpi-value" id="analyticsResolved">0</div>
+                        <div class="analytics-kpi-caption">Completed reports</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                    <div class="analytics-panel">
+                        <h3 class="analytics-panel-title">Issue Distribution</h3>
+                        <div id="analyticsIssueChart"></div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <div class="analytics-panel">
+                        <h3 class="analytics-panel-title">Reports by Purok</h3>
+                        <div id="analyticsPurokChart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <div class="analytics-kpi">
+                        <div class="analytics-kpi-label">Flood Reports</div>
+                        <div class="analytics-kpi-value" id="analyticsFloodTotal">0</div>
+                        <div class="analytics-kpi-caption" id="analyticsFloodShare">0.0% of reports</div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-8">
+                    <div class="analytics-panel">
+                        <h3 class="analytics-panel-title">Recent Activity</h3>
+                        <div id="analyticsRecentActivity">
+                            <p class="analytics-empty">Loading activity...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- END ANALYTICS DASHBOARD -->
+<!-- COMMUNITY REPORT MAP -->
     <section class="card section-card" id="communityMapSection">
         <div class="section-body">
             <div class="section-heading">
@@ -701,7 +833,25 @@
                 <span class="legend-item"><span class="legend-dot" style="background:#9333ea"></span>Others</span>
             </div>
 
-            <div id="reportMap" role="application" aria-label="Interactive map of community reports"></div>
+            <div class="d-flex flex-wrap align-items-center gap-3 my-3">
+    <div class="form-check form-switch mb-0">
+        <input
+            class="form-check-input"
+            type="checkbox"
+            role="switch"
+            id="floodHeatmapToggle"
+            aria-describedby="floodHeatmapMessage"
+        >
+        <label class="form-check-label fw-semibold" for="floodHeatmapToggle">
+            Show Flood Report Heatmap
+        </label>
+    </div>
+    <small id="floodHeatmapMessage" class="text-secondary">
+        Shows the concentration of submitted flood reports, not predicted flood levels.
+    </small>
+</div>
+
+<div id="reportMap" role="application" aria-label="Interactive map of community reports"></div>
             <p class="map-note mt-3 mb-0">
                 <i class="fa-solid fa-circle-info mt-1" aria-hidden="true"></i>
                 <span>Select a map marker to view report details. Use the popup's close button to return to the previous map view.</span>
@@ -859,7 +1009,107 @@
     </section>
 
     <!-- RESIDENT REPORTS -->
-    <section id="residentReports" class="card section-card">
+        <!-- EMERGENCY ANNOUNCEMENTS -->
+    <section id="officialAnnouncements" class="card section-card announcement-section">
+        <div class="section-body">
+            <div class="section-heading mb-4">
+                <span class="section-icon">
+                    <i class="fa-solid fa-bullhorn" aria-hidden="true"></i>
+                </span>
+                <div>
+                    <h2 class="section-title">Emergency Announcements</h2>
+                    <p class="section-description">Publish important community advisories and emergency alerts.</p>
+                </div>
+            </div>
+
+            <div id="officialAnnouncementMessage" class="alert d-none" role="status"></div>
+
+            <form id="announcementForm" class="announcement-form">
+                <input type="hidden" id="announcementEditId">
+
+                <div class="mb-3">
+                    <label for="announcementTitle" class="form-label fw-semibold">Announcement Title</label>
+                    <input id="announcementTitle" class="form-control" type="text"
+                           minlength="5" maxlength="120" required
+                           placeholder="Enter announcement title">
+                </div>
+
+                <div class="mb-3">
+                    <label for="announcementMessage" class="form-label fw-semibold">Full Message</label>
+                    <textarea id="announcementMessage" class="form-control" rows="5"
+                              minlength="10" maxlength="3000" required
+                              placeholder="Write the complete public advisory..."></textarea>
+                    <div class="form-text">10 to 3,000 characters.</div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="announcementCategory" class="form-label fw-semibold">Category</label>
+                        <select id="announcementCategory" class="form-select" required>
+                            <option value="Flood Warning">Flood Warning</option>
+                            <option value="Evacuation">Evacuation</option>
+                            <option value="Weather Alert">Weather Alert</option>
+                            <option value="Road Closure">Road Closure</option>
+                            <option value="General Advisory">General Advisory</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="announcementPriority" class="form-label fw-semibold">Priority</label>
+                        <select id="announcementPriority" class="form-select" required>
+                            <option value="Normal">Normal</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="announcementStatus" class="form-label fw-semibold">Publication Status</label>
+                        <select id="announcementStatus" class="form-select" required>
+                            <option value="Published">Published</option>
+                            <option value="Archived">Archived</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-3 mb-3">
+                    <label for="announcementExpiresAt" class="form-label fw-semibold">
+                        Optional Expiration Date and Time
+                    </label>
+                    <input id="announcementExpiresAt" class="form-control"
+                           type="datetime-local">
+                    <div class="form-text">Leave blank if the announcement has no expiration.</div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <button id="saveAnnouncementButton" class="btn btn-primary" type="submit">
+                        <i class="fa-solid fa-paper-plane me-2" aria-hidden="true"></i>
+                        Publish Announcement
+                    </button>
+                    <button id="cancelAnnouncementEdit" class="btn btn-outline-secondary d-none" type="button">
+                        Cancel Edit
+                    </button>
+                </div>
+            </form>
+
+            <hr class="my-4">
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <h3 class="h5 fw-bold mb-0">Announcement Records</h3>
+                <span id="officialAnnouncementCount" class="badge text-bg-primary">0 announcements</span>
+            </div>
+
+            <div id="officialAnnouncementsLoading" class="alert alert-info">
+                Loading announcements...
+            </div>
+            <div id="officialAnnouncementsEmpty" class="alert alert-secondary d-none">
+                No announcements have been created.
+            </div>
+            <div id="officialAnnouncementsList" class="announcement-list"></div>
+        </div>
+    </section>
+    <!-- END EMERGENCY ANNOUNCEMENTS -->
+<section id="residentReports" class="card section-card">
         <div class="section-body">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
                 <div class="section-heading">
@@ -946,6 +1196,172 @@
             </div>
         </div>
     </section>
+
+<!-- ====================================== -->
+<!-- OFFICIAL EMERGENCY RESPONSE -->
+<!-- ====================================== -->
+
+<section id="officialEmergencyResponse" class="emergency-response-section card mt-4">
+    <div class="card-body p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div>
+                <div class="small text-uppercase text-secondary fw-semibold">
+                    Santa Cruz, Laguna
+                </div>
+                <h2 class="h4 fw-bold mb-1">
+                    <i class="fa-solid fa-kit-medical text-danger me-2" aria-hidden="true"></i>
+                    Emergency Response Information
+                </h2>
+                <p class="text-secondary mb-0">
+                    Reference directory for emergency coordination and resident assistance.
+                </p>
+            </div>
+            <span class="badge text-bg-primary">Official Reference</span>
+        </div>
+
+        <div class="alert alert-warning">
+            <strong>Official reminder:</strong>
+            Confirm hotline availability and evacuation center status with the
+            appropriate municipal office before issuing public instructions.
+        </div>
+
+        <h3 class="h5 fw-bold">Emergency Contacts</h3>
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Office</th>
+                        <th>Mobile Contact</th>
+                        <th>Landline</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>MDRRMO</td>
+                        <td>0916-904-9459</td>
+                        <td>(049) 523-3780</td>
+                    </tr>
+                    <tr>
+                        <td>PNP Santa Cruz</td>
+                        <td>0998-598-5646 / 0967-630-4240</td>
+                        <td>(049) 523-1815</td>
+                    </tr>
+                    <tr>
+                        <td>BFP Santa Cruz</td>
+                        <td>0910-766-1443</td>
+                        <td>(049) 523-3752</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="h5 fw-bold">Identified Evacuation Facility</h3>
+        <div class="emergency-center-card">
+            <h4 class="h6 fw-bold">Pilot Evacuation Center</h4>
+            <p class="text-secondary mb-2">Barangay Duhat, Santa Cruz, Laguna</p>
+            <span class="badge text-bg-secondary">Availability not confirmed</span>
+            <p class="small text-secondary mt-3 mb-0">
+                Exact address, capacity, accessibility, and current operating
+                status require confirmation from MDRRMO.
+            </p>
+        </div>
+
+        <h3 class="h5 fw-bold mt-4">Response Coordination Reminders</h3>
+        <ul class="mb-0">
+            <li>Verify incident reports and affected locations before issuing advisories.</li>
+            <li>Coordinate evacuation instructions with MDRRMO and barangay officials.</li>
+            <li>Keep residents informed through the existing Emergency Announcements module.</li>
+            <li>Update evacuation information only after confirmation from the responsible office.</li>
+            <li>Direct urgent rescue requests to the appropriate emergency hotline.</li>
+        </ul>
+    </div>
+</section>
+
+<!-- ====================================== -->
+<!-- END OFFICIAL EMERGENCY RESPONSE -->
+<!-- ====================================== -->
+
+<!-- ====================================== -->
+<!-- OFFICIAL AUDIT LOGS -->
+<!-- ====================================== -->
+
+<section id="officialAuditLogs" class="mt-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <h5 class="mb-1">
+                        <i class="fa-solid fa-clipboard-list me-2 text-primary" aria-hidden="true"></i>
+                        Official Audit Logs
+                    </h5>
+                    <p class="text-muted small mb-0">
+                        Records of official actions and system updates.
+                    </p>
+                </div>
+                <span class="badge bg-secondary">Latest 300 records</span>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="row g-2 mb-3">
+                <div class="col-md-7">
+                    <input
+                        type="search"
+                        class="form-control"
+                        id="auditLogSearch"
+                        placeholder="Search official, action, report, or details..."
+                        aria-label="Search audit logs">
+                </div>
+
+                <div class="col-md-5">
+                    <select class="form-select" id="auditLogActionFilter" aria-label="Filter audit logs">
+                        <option value="all">All Actions</option>
+                        <option value="report_approved">Report Approved</option>
+                        <option value="report_rejected">Report Rejected</option>
+                        <option value="report_status_updated">Report Status Updated</option>
+                        <option value="personnel_assigned">Personnel Assigned</option>
+                        <option value="personnel_unassigned">Personnel Unassigned</option>
+                        <option value="announcement_published">Announcement Published</option>
+                        <option value="announcement_updated">Announcement Updated</option>
+                        <option value="announcement_archived">Announcement Archived</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="auditLogsLoading" class="text-center text-muted py-4">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                Loading audit logs...
+            </div>
+
+            <div id="auditLogsError" class="alert alert-danger d-none" role="alert"></div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date &amp; Time</th>
+                            <th>Official</th>
+                            <th>Action</th>
+                            <th>Module</th>
+                            <th>Target</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditLogsTableBody"></tbody>
+                </table>
+            </div>
+
+            <div id="auditLogsEmpty" class="text-center text-muted py-3 d-none">
+                No audit records match your search.
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ====================================== -->
+<!-- END OFFICIAL AUDIT LOGS -->
+<!-- ====================================== -->
+
 </main>
 
 <!-- REPORT DETAILS MODAL -->
@@ -1045,7 +1461,46 @@ Review the submitted report before making it visible to the public.
                 </div>
 
                 <div class="mb-2">
-                    <label for="detailStatus" class="form-label">Update Report Status</label>
+                    <div class="card border mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="fa-solid fa-user-shield text-primary" aria-hidden="true"></i>
+            <h3 class="h6 fw-bold mb-0">Personnel Assignment</h3>
+        </div>
+
+        <p class="small text-secondary mb-3">
+            Assign this report to an authorized official responsible for coordinating its response.
+        </p>
+
+        <div class="mb-3">
+            <div class="small text-secondary mb-1">Currently Assigned To</div>
+            <div id="currentAssignedPersonnel" class="fw-semibold">Unassigned</div>
+        </div>
+
+        <label for="personnelAssignmentSelect" class="form-label fw-semibold">
+            Select Personnel
+        </label>
+
+        <select id="personnelAssignmentSelect" class="form-select mb-3">
+            <option value="">Unassigned</option>
+            <option value="lA4mlJYUdBSsu8qZjTOSeFet3Tr2">Main Official</option>
+            <option value="GU9l1duyPxRIear5WWzuSJWYgYq1">juswapogi</option>
+        </select>
+
+        <button type="button"
+                class="btn btn-outline-primary"
+                id="savePersonnelAssignmentButton">
+            <i class="fa-solid fa-user-check me-1" aria-hidden="true"></i>
+            Save Assignment
+        </button>
+
+        <div id="personnelAssignmentMessage"
+             class="small mt-2"
+             role="status"
+             aria-live="polite"></div>
+    </div>
+</div>
+<label for="detailStatus" class="form-label">Update Report Status</label>
                     <select id="detailStatus" class="form-select">
                         <option value="Pending">Pending</option>
                         <option value="Processing">Processing</option>
@@ -1054,6 +1509,20 @@ Review the submitted report before making it visible to the public.
                         <option value="Cancelled">Cancelled</option>
                     </select>
                 </div>
+                <div class="mb-3">
+                    <label for="detailOfficialRemarks" class="form-label fw-semibold">
+                        Official Remarks <span class="text-secondary">(Optional)</span>
+                    </label>
+                    <textarea id="detailOfficialRemarks"
+                              class="form-control"
+                              rows="3"
+                              maxlength="500"
+                              placeholder="Add an update or note for the resident..."></textarea>
+                    <div class="form-text">
+                        This remark will appear in the resident's report activity timeline.
+                    </div>
+                </div>
+
                 <div id="expectedAssistanceSection" class="mb-3 d-none">
                     <label for="expectedAssistanceInput" class="form-label fw-semibold">
                         Expected Assistance Date &amp; Time <span class="text-danger">*</span>
@@ -1140,6 +1609,10 @@ Review the submitted report before making it visible to the public.
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script type="module" src="js/official-dashboard.js"></script>
+<script type="module" src="js/official-announcements.js"></script>
+<script type="module" src="js/official-analytics.js"></script>
+<script type="module" src="js/official-audit-logs.js"></script>
 </body>
 </html>

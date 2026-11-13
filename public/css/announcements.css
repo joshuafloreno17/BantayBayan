@@ -1,0 +1,61 @@
+.announcement-section {
+    scroll-margin-top: 90px;
+}
+
+.announcement-form {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 20px;
+}
+
+.announcement-list {
+    display: grid;
+    gap: 14px;
+}
+
+.announcement-record,
+.resident-announcement-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    padding: 18px;
+    min-width: 0;
+}
+
+.announcement-message {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.65;
+    color: #334155;
+}
+
+.announcement-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 18px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 12px;
+}
+
+.announcement-critical {
+    border: 2px solid #dc3545;
+    border-left-width: 6px;
+    background: #fffafa;
+}
+
+.announcement-critical .announcement-category {
+    color: #b42318;
+}
+
+@media (max-width: 575.98px) {
+    .announcement-form {
+        padding: 14px;
+    }
+
+    .announcement-record,
+    .resident-announcement-card {
+        padding: 14px;
+    }
+}

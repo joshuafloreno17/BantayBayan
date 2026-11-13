@@ -6,7 +6,10 @@ import {
     onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
 
-const OFFICIAL_UID = "lA4mlJYUdBSsu8qZjTOSeFet3Tr2";
+const OFFICIAL_UIDS = new Set([
+    "lA4mlJYUdBSsu8qZjTOSeFet3Tr2",
+    "GU9l1duyPxRIear5WWzuSJWYgYq1"
+]);
 
 const loginForm = document.getElementById("loginForm");
 const loginMessage = document.getElementById("loginMessage");
@@ -28,7 +31,7 @@ function redirectByAccount(user) {
 
     redirectStarted = true;
 
-    if (user.uid === OFFICIAL_UID) {
+    if (OFFICIAL_UIDS.has(user.uid)) {
         window.location.replace("official-dashboard.html");
     } else {
         window.location.replace("dashboard.html");

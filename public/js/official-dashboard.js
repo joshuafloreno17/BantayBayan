@@ -1,4 +1,4 @@
-﻿import { auth, db } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js";
 
 import {
     onAuthStateChanged,
@@ -10,20 +10,70 @@ import {
     doc,
     updateDoc,
     onSnapshot,
-    Timestamp
+    arrayUnion,
+    Timestamp,
+    writeBatch,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 
 // ==========================================
 // CONFIGURATION
 // ==========================================
 
-const OFFICIAL_UID = "lA4mlJYUdBSsu8qZjTOSeFet3Tr2";
+const OFFICIAL_UIDS = new Set([
+    "lA4mlJYUdBSsu8qZjTOSeFet3Tr2",
+    "GU9l1duyPxRIear5WWzuSJWYgYq1"
+]);
 
 const DEFAULT_MAP_CENTER = [12.8797, 121.7740];
 const DEFAULT_MAP_ZOOM = 6;
 const REPORT_MAP_ZOOM = 17;
 
 const $ = id => document.getElementById(id);
+// ==========================================
+// OFFICIAL AUDIT LOG - ATOMIC WRITE HELPER
+// ==========================================
+
+async function commitOfficialAuditUpdate(
+    collectionName,
+    targetId,
+    updateData,
+    action,
+    details
+) {
+    if (!currentUser || !OFFICIAL_UIDS.has(currentUser.uid)) {
+        throw new Error("Unauthorized audit action.");
+    }
+
+    const batch = writeBatch(db);
+    const targetRef = doc(db, collectionName, targetId);
+    const auditRef = doc(collection(db, "auditLogs"));
+
+    const targetLabel =
+        selectedReport?.title ||
+        selectedReport?.issueType ||
+        selectedReport?.id ||
+        targetId;
+
+    batch.update(targetRef, updateData);
+
+    batch.set(auditRef, {
+        actorUid: currentUser.uid,
+        actorEmail: currentUser.email || "",
+        action,
+        targetCollection: collectionName,
+        targetId,
+        targetLabel: String(targetLabel).slice(0, 200),
+        details: String(details || "").slice(0, 1000),
+        timestamp: serverTimestamp()
+    });
+
+    await batch.commit();
+}
+
+// ==========================================
+// END OFFICIAL AUDIT LOG HELPER
+// ==========================================
 
 const ISSUE_LABELS = {
     garbage: "Garbage",
@@ -90,8 +140,13 @@ const detailModal =
         : null;
 
 const saveStatusButton = $("saveReportStatusButton");
+const personnelAssignmentSelect = $("personnelAssignmentSelect");
+const savePersonnelAssignmentButton = $("savePersonnelAssignmentButton");
+const currentAssignedPersonnel = $("currentAssignedPersonnel");
+const personnelAssignmentMessage = $("personnelAssignmentMessage");
 const detailStatus = $("detailStatus");
 const detailMessage = $("detailMessage");
+const detailOfficialRemarks = $("detailOfficialRemarks");
 
 const expectedAssistanceSection = $("expectedAssistanceSection");
 const expectedAssistanceInput = $("expectedAssistanceInput");
@@ -145,6 +200,10 @@ let detailMap = null;
 let detailMarker = null;
 
 let mainMarkers = [];
+
+let floodHeatLayer = null;
+let floodHeatVisible = false;
+let floodHeatToggleBound = false;
 let unsubscribeResidentReports = null;
 let unsubscribeFloodReports = null;
 
@@ -573,6 +632,17 @@ function initializeMainMap() {
         zoomControl: true
     }).setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
 
+    const floodHeatToggle = $("floodHeatmapToggle");
+
+    if (floodHeatToggle && !floodHeatToggleBound) {
+        floodHeatToggle.addEventListener("change", () => {
+            floodHeatVisible = floodHeatToggle.checked;
+            refreshFloodHeatLayer();
+        });
+
+        floodHeatToggleBound = true;
+    }
+
     L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
@@ -783,6 +853,110 @@ function findMainMarker(reportId, reportType) {
     );
 }
 
+
+// ==========================================
+// FLOOD REPORT CONCENTRATION HEATMAP
+// ==========================================
+
+function refreshFloodHeatLayer() {
+    if (!mainMap) return;
+
+    const heatToggle = $("floodHeatmapToggle");
+    const heatMessage = $("floodHeatmapMessage");
+
+    if (!window.L || typeof L.heatLayer !== "function") {
+        floodHeatVisible = false;
+
+        if (heatToggle) {
+            heatToggle.checked = false;
+            heatToggle.disabled = true;
+        }
+
+        if (heatMessage) {
+            heatMessage.textContent =
+                "Heatmap unavailable. Please check the Leaflet.heat plugin connection.";
+        }
+
+        if (floodHeatLayer && mainMap.hasLayer(floodHeatLayer)) {
+            mainMap.removeLayer(floodHeatLayer);
+        }
+
+        return;
+    }
+
+    if (heatToggle) {
+        heatToggle.disabled = false;
+    }
+
+    if (heatMessage) {
+        heatMessage.textContent =
+            "Shows the concentration of submitted flood reports, not predicted flood levels.";
+    }
+
+    if (!floodHeatVisible) {
+        if (floodHeatLayer && mainMap.hasLayer(floodHeatLayer)) {
+            mainMap.removeLayer(floodHeatLayer);
+        }
+
+        return;
+    }
+
+    const heatPoints = allFloodReports
+        .map(report => {
+            if (
+                report.latitude === undefined ||
+                report.latitude === null ||
+                report.latitude === "" ||
+                report.longitude === undefined ||
+                report.longitude === null ||
+                report.longitude === ""
+            ) {
+                return null;
+            }
+
+            const latitude = Number(report.latitude);
+            const longitude = Number(report.longitude);
+
+            if (
+                !Number.isFinite(latitude) ||
+                !Number.isFinite(longitude) ||
+                latitude < -90 ||
+                latitude > 90 ||
+                longitude < -180 ||
+                longitude > 180
+            ) {
+                return null;
+            }
+
+            return [latitude, longitude, 0.65];
+        })
+        .filter(point => point !== null);
+
+    if (!floodHeatLayer) {
+        floodHeatLayer = L.heatLayer(heatPoints, {
+            radius: 28,
+            blur: 22,
+            maxZoom: 17,
+            minOpacity: 0.35,
+            gradient: {
+                0.25: "#3b82f6",
+                0.50: "#facc15",
+                0.75: "#f97316",
+                1.00: "#dc2626"
+            }
+        });
+    } else {
+        floodHeatLayer.setLatLngs(heatPoints);
+    }
+
+    if (heatPoints.length > 0) {
+        if (!mainMap.hasLayer(floodHeatLayer)) {
+            floodHeatLayer.addTo(mainMap);
+        }
+    } else if (mainMap.hasLayer(floodHeatLayer)) {
+        mainMap.removeLayer(floodHeatLayer);
+    }
+}
 function refreshMainMap() {
     initializeMainMap();
 
@@ -817,6 +991,10 @@ function refreshMainMap() {
         ];
 
         const positions = getDisplayPositions(items);
+
+        // Keep the heatmap separate from report markers.
+        // It uses original flood coordinates, without marker offsets.
+        refreshFloodHeatLayer();
 
         items.forEach(item => {
             const key = getReportKey(
@@ -1369,9 +1547,67 @@ if (rejectApprovalButton) {
         saveStatusButton.textContent = "Save Status";
     }
 
+    renderPersonnelAssignment();
     detailModal.show();
 }
 
+// ==========================================
+// ==========================================
+// PERSONNEL ASSIGNMENT
+// ==========================================
+
+const ASSIGNABLE_PERSONNEL = [
+    {
+        uid: "lA4mlJYUdBSsu8qZjTOSeFet3Tr2",
+        name: "Main Official"
+    },
+    {
+        uid: "GU9l1duyPxRIear5WWzuSJWYgYq1",
+        name: "juswapogi"
+    }
+];
+
+function getAssignedPersonnelName(uid) {
+    const person = ASSIGNABLE_PERSONNEL.find(
+        item => item.uid === uid
+    );
+
+    return person ? person.name : "";
+}
+
+function renderPersonnelAssignment() {
+    if (!selectedReport) return;
+
+    const assignedUid = selectedReport.assignedPersonnelUid || "";
+
+    const assignedName =
+        selectedReport.assignedPersonnelName ||
+        getAssignedPersonnelName(assignedUid);
+
+    if (personnelAssignmentSelect) {
+        personnelAssignmentSelect.value =
+            getAssignedPersonnelName(assignedUid) ? assignedUid : "";
+    }
+
+    if (currentAssignedPersonnel) {
+        currentAssignedPersonnel.textContent =
+            assignedName || "Unassigned";
+    }
+
+    if (personnelAssignmentMessage) {
+        personnelAssignmentMessage.textContent = "";
+        personnelAssignmentMessage.className = "small mt-2";
+    }
+
+    if (savePersonnelAssignmentButton) {
+        savePersonnelAssignmentButton.disabled = false;
+        savePersonnelAssignmentButton.innerHTML =
+            '<i class="fa-solid fa-user-check me-1" aria-hidden="true"></i> Save Assignment';
+    }
+}
+
+// ==========================================
+// END PERSONNEL ASSIGNMENT
 // ==========================================
 // DETAILS MAP
 // ==========================================
@@ -1442,7 +1678,7 @@ if (detailModalElement) {
 // ==========================================
 
 async function updateReportApproval(newApprovalStatus, rejectionReason = "") {
-    if (!currentUser || currentUser.uid !== OFFICIAL_UID) {
+    if (!currentUser || !OFFICIAL_UIDS.has(currentUser.uid)) {
         if (detailRejectionReason && detailRejectionReasonText) {
             const reason = selectedReport.rejectionReason || "";
 
@@ -1484,9 +1720,32 @@ async function updateReportApproval(newApprovalStatus, rejectionReason = "") {
             updateData.rejectionReason = rejectionReason.trim();
         }
 
-        await updateDoc(
-            doc(db, collectionName, selectedReport.id),
-            updateData
+                if (selectedReport.approvalStatus !== newApprovalStatus) {
+            updateData.activityHistory = arrayUnion({
+                type: "approval",
+                title: newApprovalStatus === "Approved"
+                    ? "Report Approved"
+                    : "Report Rejected",
+                value: newApprovalStatus,
+                remarks: newApprovalStatus === "Rejected"
+                    ? rejectionReason.trim()
+                    : "",
+                actorUid: currentUser.uid,
+                actorEmail: currentUser.email || "",
+                timestamp: Timestamp.now()
+            });
+        }
+
+await commitOfficialAuditUpdate(
+            collectionName,
+            selectedReport.id,
+            updateData,
+            newApprovalStatus === "Approved"
+                ? "report_approved"
+                : "report_rejected",
+            newApprovalStatus === "Rejected"
+                ? rejectionReason.trim()
+                : "Report approved."
         );
 
         selectedReport.approvalStatus = newApprovalStatus;
@@ -1942,7 +2201,7 @@ function startFloodReportsListener() {
 
 // Refresh warning count habang tumatagal ang reports.
 window.setInterval(() => {
-    if (currentUser && currentUser.uid === OFFICIAL_UID) {
+    if (currentUser && OFFICIAL_UIDS.has(currentUser.uid)) {
         renderFloodAlerts();
     }
 }, 30000);
@@ -2177,7 +2436,7 @@ async function compressResolutionPhoto(file) {
 
 if (saveStatusButton) {
     saveStatusButton.addEventListener("click", async () => {
-        if (!currentUser || currentUser.uid !== OFFICIAL_UID) {
+        if (!currentUser || !OFFICIAL_UIDS.has(currentUser.uid)) {
             showDetailMessage("Unauthorized account.", "danger");
             return;
         }
@@ -2240,7 +2499,24 @@ if (saveStatusButton) {
             status: newStatus
         };
 
-        if (newStatus === "Processing") {
+        const previousStatus = selectedReport.status || "";
+        const officialRemarks = detailOfficialRemarks
+            ? detailOfficialRemarks.value.trim()
+            : "";
+
+        if (previousStatus !== newStatus || officialRemarks) {
+            updateData.activityHistory = arrayUnion({
+                type: "status",
+                title: "Status Updated",
+                value: newStatus,
+                remarks: officialRemarks,
+                actorUid: currentUser.uid,
+                actorEmail: currentUser.email || "",
+                timestamp: Timestamp.now()
+            });
+        }
+
+if (newStatus === "Processing") {
             updateData.expectedAssistanceAt =
                 Timestamp.fromDate(expectedAssistanceDate);
         }
@@ -2264,13 +2540,20 @@ if (saveStatusButton) {
                 updateData.resolutionPhoto = compressedPhoto;
             }
 
-            await updateDoc(
-                doc(db, collectionName, selectedReport.id),
-                updateData
+            await commitOfficialAuditUpdate(
+                collectionName,
+                selectedReport.id,
+                updateData,
+                "report_status_updated",
+                officialRemarks || `Report status changed to ${newStatus}.`
             );
 
             // Update local data only after Firestore confirms success.
             selectedReport.status = newStatus;
+
+            if (detailOfficialRemarks) {
+                detailOfficialRemarks.value = "";
+            }
 
             if (updateData.expectedAssistanceAt) {
                 selectedReport.expectedAssistanceAt =
@@ -2324,6 +2607,138 @@ if (saveStatusButton) {
         }
     });
 }
+// ==========================================
+// SAVE PERSONNEL ASSIGNMENT
+// ==========================================
+
+if (savePersonnelAssignmentButton) {
+    savePersonnelAssignmentButton.addEventListener("click", async () => {
+        if (!currentUser || !OFFICIAL_UIDS.has(currentUser.uid)) {
+            if (personnelAssignmentMessage) {
+                personnelAssignmentMessage.textContent = "Unauthorized account.";
+                personnelAssignmentMessage.className = "small mt-2 text-danger";
+            }
+            return;
+        }
+
+        if (!selectedReport || !personnelAssignmentSelect) {
+            if (personnelAssignmentMessage) {
+                personnelAssignmentMessage.textContent = "No report is currently selected.";
+                personnelAssignmentMessage.className = "small mt-2 text-danger";
+            }
+            return;
+        }
+
+        const selectedUid = personnelAssignmentSelect.value;
+
+        const selectedPersonnel = selectedUid
+            ? ASSIGNABLE_PERSONNEL.find(person => person.uid === selectedUid)
+            : null;
+
+        if (selectedUid && !selectedPersonnel) {
+            if (personnelAssignmentMessage) {
+                personnelAssignmentMessage.textContent = "Invalid personnel selection.";
+                personnelAssignmentMessage.className = "small mt-2 text-danger";
+            }
+            return;
+        }
+
+        const previousUid = selectedReport.assignedPersonnelUid || "";
+        const newUid = selectedPersonnel?.uid || "";
+
+        if (previousUid === newUid) {
+            if (personnelAssignmentMessage) {
+                personnelAssignmentMessage.textContent = "No assignment changes were made.";
+                personnelAssignmentMessage.className = "small mt-2 text-secondary";
+            }
+            return;
+        }
+
+        const collectionName =
+            selectedReportType === "flood" ? "floodReports" : "reports";
+
+        const eventTimestamp = Timestamp.now();
+
+        const updateData = {
+            assignedPersonnelUid: selectedPersonnel?.uid || null,
+            assignedPersonnelName: selectedPersonnel?.name || "",
+            assignedAt: selectedPersonnel ? eventTimestamp : null,
+
+            activityHistory: arrayUnion({
+                type: "assignment",
+                title: "Personnel Assignment Updated",
+                value: selectedPersonnel?.name || "Unassigned",
+                remarks: selectedPersonnel
+                    ? `Report assigned to ${selectedPersonnel.name}.`
+                    : "Personnel assignment removed.",
+                actorUid: currentUser.uid,
+                actorEmail: currentUser.email || "",
+                timestamp: eventTimestamp
+            })
+        };
+
+        savePersonnelAssignmentButton.disabled = true;
+        savePersonnelAssignmentButton.textContent = "Saving...";
+
+        if (personnelAssignmentMessage) {
+            personnelAssignmentMessage.textContent = "Saving personnel assignment...";
+            personnelAssignmentMessage.className = "small mt-2 text-secondary";
+        }
+
+        try {
+            await commitOfficialAuditUpdate(
+                collectionName,
+                selectedReport.id,
+                updateData,
+                newUid ? "personnel_assigned" : "personnel_unassigned",
+                newUid
+                    ? `Report assigned to ${selectedPersonnel.name}.`
+                    : "Personnel assignment removed."
+            );
+
+            selectedReport.assignedPersonnelUid =
+                updateData.assignedPersonnelUid;
+
+            selectedReport.assignedPersonnelName =
+                updateData.assignedPersonnelName;
+
+            selectedReport.assignedAt =
+                updateData.assignedAt;
+
+            renderPersonnelAssignment();
+
+            if (personnelAssignmentMessage) {
+                personnelAssignmentMessage.textContent =
+                    selectedPersonnel
+                        ? `Successfully assigned to ${selectedPersonnel.name}.`
+                        : "Personnel assignment removed successfully.";
+
+                personnelAssignmentMessage.className = "small mt-2 text-success";
+            }
+
+        } catch (error) {
+            console.error("Failed to save personnel assignment:", error);
+
+            if (personnelAssignmentMessage) {
+                personnelAssignmentMessage.textContent =
+                    "Unable to save assignment. Please try again.";
+
+                personnelAssignmentMessage.className = "small mt-2 text-danger";
+            }
+
+            personnelAssignmentSelect.value = previousUid;
+
+        } finally {
+            savePersonnelAssignmentButton.disabled = false;
+            savePersonnelAssignmentButton.innerHTML =
+                '<i class="fa-solid fa-user-check me-1" aria-hidden="true"></i> Save Assignment';
+        }
+    });
+}
+
+// ==========================================
+// END PERSONNEL ASSIGNMENT HANDLER
+// ==========================================
 // OFFICIAL AUTHENTICATION
 // ==========================================
 
@@ -2334,7 +2749,7 @@ onAuthStateChanged(auth, async user => {
         return;
     }
 
-    if (user.uid !== OFFICIAL_UID) {
+    if (!OFFICIAL_UIDS.has(user.uid)) {
         stopReportListeners();
 
         try {
