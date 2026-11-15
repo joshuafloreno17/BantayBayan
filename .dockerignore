@@ -1,0 +1,16 @@
+﻿.git
+.github
+.firebase
+node_modules
+BantayBayan
+NAPC-Connect
+backups
+
+**/*.backup*
+**/*.bak
+
+**/*serviceAccount*.json
+**/*firebase-adminsdk*.json
+
+.env
+.env.*
